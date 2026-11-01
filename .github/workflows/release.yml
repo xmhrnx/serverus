@@ -88,16 +88,22 @@ jobs:
           if [ -n "$WINDOWS_CERT_BASE64" ]; then echo "$WINDOWS_CERT_BASE64" | base64 -d > codesign.pfx; fi
       - name: Build Linux packages
         run: giode build deb rpm
-      - name: Build Windows Android
+      - name: Build Windows
+        if: matrix.primary
+        env:
+          GIODE_WINDOWS_CERT_PASS: ${{ secrets.GIODE_WINDOWS_CERT_PASS }}
+        run: |
+          # Signed when the repository has the certificate.
+          win=""; if [ -n "$GIODE_WINDOWS_CERT_PASS" ]; then win="-release"; fi
+          giode build $win -arch amd64 windows-installer msix
+      - name: Build Android
         if: matrix.primary
         env:
           GIODE_KEYSTORE_PASS: ${{ secrets.GIODE_KEYSTORE_PASS }}
-          GIODE_WINDOWS_CERT_PASS: ${{ secrets.GIODE_WINDOWS_CERT_PASS }}
         run: |
-          # Signed when the repository has the certificate or keystore.
-          win=""; if [ -n "$GIODE_WINDOWS_CERT_PASS" ]; then win="-release"; fi
-          giode build $win -arch amd64 windows-installer msix
+          # Signed when the repository has the keystore.
           apk=""; if [ -n "$GIODE_KEYSTORE_PASS" ]; then apk="-release"; fi
+          giode doctor || true
           giode build $apk android aab
       - uses: actions/upload-artifact@v4
         with:

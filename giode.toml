@@ -34,6 +34,12 @@ arch = "amd64"
 # desktop_shortcut = true
 # license = "assets/license.txt"
 
+[windows.msix]
+# The signing certificate's subject. A Windows code-signing certificate
+# (giode cert, or a bought one) must have exactly this subject, or the
+# Partner Center publisher ID when the package goes to the Store.
+publisher = "CN=xmhrnx"
+
 [windows.signing]
 # certificate = "codesign.pfx"   # created by giode cert (testing) or bought; password in $GIODE_WINDOWS_CERT_PASS
 # timestamp = "http://timestamp.digicert.com"
