@@ -35,6 +35,22 @@ func (p Protocol) Label() string {
 	return string(p)
 }
 
+// ShortLabel is the protocol's name where space is tight, as in the
+// server editor's connection type picker.
+func (p Protocol) ShortLabel() string {
+	switch p {
+	case ProtocolSSH:
+		return "SSH"
+	case ProtocolTelnet:
+		return "Telnet"
+	case ProtocolFTP:
+		return "FTP"
+	case ProtocolLocal:
+		return "Local"
+	}
+	return string(p)
+}
+
 // DefaultPort is the well-known port for the protocol, 0 when it has
 // none.
 func (p Protocol) DefaultPort() int {

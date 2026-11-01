@@ -75,7 +75,7 @@ func NewServerDialog(e *env.Env, creds transport.Credentials, dialers DialerFact
 
 	labels := make([]string, len(domain.Protocols))
 	for i, p := range domain.Protocols {
-		labels[i] = p.Label()
+		labels[i] = p.ShortLabel()
 	}
 	d.protocol = giode.Input.Segmented(labels...).Styles(giode.Styles{Width: -1, FontSize: theme.TextSm}).OnChange(func(int) { d.syncPort() })
 	authLabels := make([]string, len(domain.AuthMethods))
@@ -319,7 +319,7 @@ func (d *ServerDialog) form() giode.Element {
 		}
 	}
 	rows = append(rows,
-		widgets.FormField("Connection type", "", d.protocol),
+		widgets.FormField("Connection type", d.selectedProtocol().Label()+protocolHint(d.selectedProtocol()), d.protocol),
 		widgets.Columns(nil,
 			widgets.FormField("Name", "", d.name),
 			widgets.FormField("Group", "Servers sharing a group are listed together", d.group),
@@ -367,3 +367,18 @@ func (d *ServerDialog) form() giode.Element {
 
 // Layout draws the dialog while it's open.
 func (d *ServerDialog) Layout(gtx layout.Context) layout.Dimensions { return d.dialog.Layout(gtx) }
+
+// protocolHint completes the line under the connection type picker.
+func protocolHint(p domain.Protocol) string {
+	switch p {
+	case domain.ProtocolSSH:
+		return ": terminal, monitoring, files and tunnels"
+	case domain.ProtocolLocal:
+		return ": manage the computer Serverus runs on"
+	case domain.ProtocolTelnet:
+		return ": a terminal for network devices and old systems"
+	case domain.ProtocolFTP:
+		return ": file management, optionally over TLS"
+	}
+	return ""
+}

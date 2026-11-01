@@ -8,7 +8,8 @@ import (
 )
 
 // DialogFrame lays out a dialog's content: an icon and title with a
-// subtitle, the body, and the buttons right-aligned in the footer.
+// subtitle, the body, and the buttons right-aligned in the footer. width
+// is the dialog's width in dp on a large window.
 func DialogFrame(icon, title, subtitle string, width int, body giode.Element, footer ...giode.Element) giode.Element {
 	head := []giode.Element{}
 	if icon != "" {
@@ -27,7 +28,15 @@ func DialogFrame(icon, title, subtitle string, width int, body giode.Element, fo
 		children = append(children, body)
 	}
 	if len(footer) > 0 {
-		children = append(children, giode.Row(giode.Styles{Width: -1, Gap: theme.Space2, Justify: giode.JustifyEnd, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Margin: giode.Inset{Top: theme.Space2}}, footer...))
+		// On a phone the buttons wrap onto several lines rather than
+		// running off the panel.
+		wrap := giode.WrapNoWrap
+		if giode.Compact() {
+			wrap = giode.WrapWrap
+		}
+		children = append(children, giode.Row(giode.Styles{Width: -1, Gap: theme.Space2, Justify: giode.JustifyEnd, Align: giode.AlignCenter, Wrap: wrap, Margin: giode.Inset{Top: theme.Space2}}, footer...))
 	}
-	return giode.Stack(giode.Styles{Gap: theme.Space5, Width: properties.Width(width)}, children...)
+	// width is the most the dialog takes; on a narrow window it shrinks
+	// to what the window leaves.
+	return giode.Stack(giode.Styles{Gap: theme.Space5, Width: -1, MaxWidth: properties.MaxWidth(width)}, children...)
 }
