@@ -6,7 +6,7 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // Breadcrumb shows the current path as clickable segments.

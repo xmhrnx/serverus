@@ -7,7 +7,7 @@ import (
 
 	"github.com/aymanbagabas/go-pty"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // shell is a login shell attached to a pseudo-terminal (ConPTY on

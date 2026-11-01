@@ -2,8 +2,8 @@
 # Reference: https://github.com/mehran9675/giode-cli#giodetoml
 
 [app]
-name = "Bastion"
-id = "com.xmhrnx.bastion"            # reverse-DNS, unique to your app; stores never let it change
+name = "Serverus"
+id = "com.xmhrnx.serverus"            # reverse-DNS, unique to your app; stores never let it change
 version = "0.1.0"
 build = 1                    # raise for every store upload (giode bump)
 icon = "assets/icon.png"

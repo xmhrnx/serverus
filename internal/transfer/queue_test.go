@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/transport/local"
+	"github.com/xmhrnx/serverus/internal/transport/local"
 )
 
 func waitIdle(t *testing.T, q *Queue) {

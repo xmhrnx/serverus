@@ -6,11 +6,11 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/format"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // TopBar is the selected server's header: who it is, how the connection

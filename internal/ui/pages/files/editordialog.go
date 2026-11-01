@@ -10,11 +10,11 @@ import (
 	"github.com/mehran9675/giode/components/dialog"
 	"github.com/mehran9675/giode/components/input"
 
-	"github.com/xmhrnx/bastion/internal/transport"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/format"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // EditorDialog opens a text file on the server, edits it and saves it

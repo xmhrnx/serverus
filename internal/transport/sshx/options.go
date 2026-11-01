@@ -5,9 +5,9 @@ package sshx
 import (
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/storage"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/storage"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Options configure a Dialer.

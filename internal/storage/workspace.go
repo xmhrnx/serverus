@@ -3,7 +3,7 @@ package storage
 import (
 	"runtime"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // Workspace is everything the user configured, saved as one JSON file.

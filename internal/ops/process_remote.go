@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // RemoteProcesses manages a Linux server's processes with ps and kill.

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // lookPath is exec.LookPath, a variable for tests.

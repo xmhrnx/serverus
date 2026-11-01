@@ -3,8 +3,8 @@ package settings
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // section groups preferences in a card under a heading.

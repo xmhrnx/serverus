@@ -6,7 +6,7 @@ import (
 	"github.com/mehran9675/giode/components/iconbutton"
 	"github.com/mehran9675/giode/components/tooltip"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // ToolButton is a compact icon button with a tooltip, for toolbars.

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // ErrNoDocker is returned on servers without the Docker CLI.

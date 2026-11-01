@@ -3,9 +3,9 @@ package files
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/transport"
-	"github.com/xmhrnx/bastion/internal/ui/format"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // Column widths of the listing, in dp.

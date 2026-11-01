@@ -17,12 +17,12 @@ import (
 	"github.com/mehran9675/giode/components/segmented"
 	"github.com/mehran9675/giode/components/toggle"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/storage"
-	"github.com/xmhrnx/bastion/internal/transport"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/storage"
+	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // DialerFactory builds a dialer that uses the given credentials, for

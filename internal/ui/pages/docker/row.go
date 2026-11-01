@@ -4,9 +4,9 @@ package docker
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ops"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ops"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // stateTone is the color of a container state.

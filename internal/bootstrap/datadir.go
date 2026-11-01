@@ -8,17 +8,17 @@ import (
 )
 
 // dataDir is where the workspace and known hosts live: the platform's
-// configuration folder (~/.config/Bastion, %AppData%\Bastion,
-// ~/Library/Application Support/Bastion, the app's files on Android).
-// BASTION_DATA_DIR overrides it, for portable installs and tests.
+// configuration folder (~/.config/Serverus, %AppData%\Serverus,
+// ~/Library/Application Support/Serverus, the app's files on Android).
+// SERVERUS_DATA_DIR overrides it, for portable installs and tests.
 func dataDir() (string, error) {
-	if d := os.Getenv("BASTION_DATA_DIR"); d != "" {
+	if d := os.Getenv("SERVERUS_DATA_DIR"); d != "" {
 		return d, os.MkdirAll(d, 0o700)
 	}
 	base, err := gioapp.DataDir()
 	if err != nil {
 		return "", err
 	}
-	d := filepath.Join(base, "Bastion")
+	d := filepath.Join(base, "Serverus")
 	return d, os.MkdirAll(d, 0o700)
 }

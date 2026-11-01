@@ -4,7 +4,7 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/styles/properties"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // IconBadge is an icon on a rounded square tinted with its color.

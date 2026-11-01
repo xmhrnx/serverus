@@ -11,22 +11,22 @@ import (
 
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/assets"
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/storage"
-	"github.com/xmhrnx/bastion/internal/transfer"
-	"github.com/xmhrnx/bastion/internal/transport"
-	"github.com/xmhrnx/bastion/internal/transport/connector"
-	"github.com/xmhrnx/bastion/internal/transport/sshx"
-	"github.com/xmhrnx/bastion/internal/tunnel"
-	"github.com/xmhrnx/bastion/internal/ui/dialogs"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/shell"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/assets"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/storage"
+	"github.com/xmhrnx/serverus/internal/transfer"
+	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport/connector"
+	"github.com/xmhrnx/serverus/internal/transport/sshx"
+	"github.com/xmhrnx/serverus/internal/tunnel"
+	"github.com/xmhrnx/serverus/internal/ui/dialogs"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/shell"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // AppID identifies the app to the keychain and the single-instance lock.
-const AppID = "com.xmhrnx.bastion"
+const AppID = "com.xmhrnx.serverus"
 
 // Run starts the app and returns when its window closes.
 func Run() error {
@@ -39,6 +39,9 @@ func Run() error {
 		return err
 	}
 	if err := theme.LoadIcons(assets.Files); err != nil {
+		return err
+	}
+	if err := theme.LoadLogo(assets.Icon); err != nil {
 		return err
 	}
 	repo, err := storage.OpenRepository(dir)
@@ -56,7 +59,7 @@ func Run() error {
 	}
 	var root *shell.Root
 	e.App = giode.New(giode.Config{
-		Title:      "Bastion",
+		Title:      "Serverus",
 		Size:       image.Pt(1380, 880),
 		MinSize:    image.Pt(980, 640),
 		Resizable:  true,

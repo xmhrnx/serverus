@@ -6,16 +6,16 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/pages/docker"
-	"github.com/xmhrnx/bastion/internal/ui/pages/files"
-	"github.com/xmhrnx/bastion/internal/ui/pages/overview"
-	"github.com/xmhrnx/bastion/internal/ui/pages/processes"
-	"github.com/xmhrnx/bastion/internal/ui/pages/services"
-	"github.com/xmhrnx/bastion/internal/ui/pages/snippets"
-	"github.com/xmhrnx/bastion/internal/ui/pages/terminal"
-	"github.com/xmhrnx/bastion/internal/ui/pages/tunnels"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/pages/docker"
+	"github.com/xmhrnx/serverus/internal/ui/pages/files"
+	"github.com/xmhrnx/serverus/internal/ui/pages/overview"
+	"github.com/xmhrnx/serverus/internal/ui/pages/processes"
+	"github.com/xmhrnx/serverus/internal/ui/pages/services"
+	"github.com/xmhrnx/serverus/internal/ui/pages/snippets"
+	"github.com/xmhrnx/serverus/internal/ui/pages/terminal"
+	"github.com/xmhrnx/serverus/internal/ui/pages/tunnels"
 )
 
 // ServerView is the workspace of one server: its header, page tabs and

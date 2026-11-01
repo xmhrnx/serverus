@@ -13,10 +13,10 @@ import (
 	"github.com/mehran9675/giode/components/scroll"
 	"github.com/mehran9675/giode/elements"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // SidebarActions are what the sidebar asks the shell to do.

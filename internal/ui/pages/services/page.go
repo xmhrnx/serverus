@@ -14,13 +14,13 @@ import (
 	"github.com/mehran9675/giode/components/segmented"
 	"github.com/mehran9675/giode/elements"
 
-	"github.com/xmhrnx/bastion/internal/ops"
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/async"
-	"github.com/xmhrnx/bastion/internal/ui/dialogs"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ops"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/async"
+	"github.com/xmhrnx/serverus/internal/ui/dialogs"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // Filters of the segmented control.

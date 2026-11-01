@@ -4,8 +4,8 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // AccentPicker chooses a server's avatar color from domain.Accents.

@@ -1,6 +1,6 @@
 package shell
 
-import "github.com/xmhrnx/bastion/internal/domain"
+import "github.com/xmhrnx/serverus/internal/domain"
 
 // PageKind identifies a page of the server workspace.
 type PageKind int

@@ -3,9 +3,9 @@ package dialogs
 import (
 	"fmt"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/storage"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/storage"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Credentials supplies secrets to connections: from the keychain when

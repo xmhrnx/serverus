@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // runOn runs command on a session's server, connecting first if needed.

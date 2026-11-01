@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // errCanceled is returned when the user dismisses a credential prompt.

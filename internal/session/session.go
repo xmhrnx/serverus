@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/monitor"
-	"github.com/xmhrnx/bastion/internal/ops"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/monitor"
+	"github.com/xmhrnx/serverus/internal/ops"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Hooks are called on a session's goroutines when its connection comes

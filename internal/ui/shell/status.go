@@ -3,8 +3,8 @@ package shell
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // stateColor is the color of a connection state.

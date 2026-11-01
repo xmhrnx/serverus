@@ -6,12 +6,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
-	"github.com/xmhrnx/bastion/internal/transport/ftpx"
-	"github.com/xmhrnx/bastion/internal/transport/local"
-	"github.com/xmhrnx/bastion/internal/transport/sshx"
-	"github.com/xmhrnx/bastion/internal/transport/telnet"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport/ftpx"
+	"github.com/xmhrnx/serverus/internal/transport/local"
+	"github.com/xmhrnx/serverus/internal/transport/sshx"
+	"github.com/xmhrnx/serverus/internal/transport/telnet"
 )
 
 // Connector implements transport.Dialer for every protocol.

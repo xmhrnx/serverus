@@ -3,7 +3,7 @@ package transport
 import (
 	"context"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // Credentials supplies secrets while connecting. The UI implements it,

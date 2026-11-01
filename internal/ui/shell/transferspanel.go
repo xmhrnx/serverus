@@ -7,11 +7,11 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/components/scroll"
 
-	"github.com/xmhrnx/bastion/internal/transfer"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/format"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/transfer"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // TransfersPanel lists uploads and downloads with their progress.

@@ -10,9 +10,9 @@ import (
 	"github.com/mehran9675/giode/components/dialog"
 	"github.com/mehran9675/giode/components/input"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // EditDialog adds and edits snippets.

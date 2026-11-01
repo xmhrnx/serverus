@@ -8,7 +8,7 @@ import (
 
 	"github.com/jlaffaye/ftp"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Home is the directory the server signs the user into.

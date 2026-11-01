@@ -6,10 +6,10 @@ import (
 
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/monitor"
-	"github.com/xmhrnx/bastion/internal/ui/format"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/monitor"
+	"github.com/xmhrnx/serverus/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // SystemHeader shows who the machine is: host name, OS and kernel, and

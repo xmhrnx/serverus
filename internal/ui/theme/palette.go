@@ -6,7 +6,7 @@ package theme
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // darkPalette is the default: deep graphite with a violet accent.

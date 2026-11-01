@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/monitor"
-	"github.com/xmhrnx/bastion/internal/storage"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/monitor"
+	"github.com/xmhrnx/serverus/internal/storage"
 )
 
 // fakeCreds answers with a fixed password and counts prompts.

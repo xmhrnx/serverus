@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // column is what the listing is sorted by.

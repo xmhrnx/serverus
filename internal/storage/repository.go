@@ -6,7 +6,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // Repository is the saved workspace. It's safe for concurrent use; every

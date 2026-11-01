@@ -3,7 +3,7 @@ package widgets
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // EmptyState fills a page that has nothing to show yet: an icon, a

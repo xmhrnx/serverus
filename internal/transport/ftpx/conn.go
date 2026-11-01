@@ -9,8 +9,8 @@ import (
 
 	"github.com/jlaffaye/ftp"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Conn is an FTP control connection. FTP runs one command at a time, so

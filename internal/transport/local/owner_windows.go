@@ -5,7 +5,7 @@ package local
 import (
 	"io/fs"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // fillOwner does nothing on Windows, whose files have ACLs rather than

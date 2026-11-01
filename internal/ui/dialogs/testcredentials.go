@@ -1,8 +1,8 @@
 package dialogs
 
 import (
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // formCredentials answers with what's typed in the server form before

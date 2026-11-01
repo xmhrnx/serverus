@@ -4,7 +4,7 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/styles/properties"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // SortHeader is a sortable column title: clicking sorts by it, again

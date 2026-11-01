@@ -4,7 +4,7 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // Welcome shows when no server is selected.
@@ -19,7 +19,7 @@ func NewWelcome(onAdd func()) *Welcome {
 
 // Layout draws the screen.
 func (w *Welcome) Layout(gtx layout.Context) layout.Dimensions {
-	return widgets.EmptyState("server", "Welcome to Bastion",
+	return widgets.EmptyState("server", "Welcome to Serverus",
 		"Pick a server on the left, or add one. Connect over SSH (directly or through a jump host), Telnet or FTP, or manage this computer.",
 		w.add).Layout(gtx)
 }

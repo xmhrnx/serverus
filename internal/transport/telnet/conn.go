@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Conn is a Telnet connection. It has one shell: the connection itself.

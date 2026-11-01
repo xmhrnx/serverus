@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Manager owns the sessions of every server.

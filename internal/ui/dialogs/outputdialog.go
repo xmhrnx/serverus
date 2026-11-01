@@ -8,10 +8,10 @@ import (
 	"github.com/mehran9675/giode/components/dialog"
 	"github.com/mehran9675/giode/components/scroll"
 
-	"github.com/xmhrnx/bastion/internal/ui/async"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ui/async"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // OutputDialog shows a command's text output — logs, a status report —

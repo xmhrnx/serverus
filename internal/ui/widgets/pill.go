@@ -3,7 +3,7 @@ package widgets
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // Pill is a small rounded label tinted with c: states, tags, counts.

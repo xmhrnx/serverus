@@ -4,7 +4,7 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/styles/properties"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // DialogFrame lays out a dialog's content: an icon and title with a

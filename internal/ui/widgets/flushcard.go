@@ -3,7 +3,7 @@ package widgets
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // flushBase is a card without padding, for content that runs to its

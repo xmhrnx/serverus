@@ -1,4 +1,4 @@
-# Bastion
+# Serverus
 
 A cross-platform app for managing remote servers, built with
 [giode](https://github.com/mehran9675/giode) and its
@@ -21,7 +21,7 @@ macOS and Linux, and builds for Android.
 - "Test connection" in the editor before saving.
 - **Security**: passwords and passphrases are stored in the OS keychain (Keychain,
   Credential Manager/DPAPI, Secret Service), never in the workspace file. Host keys are
-  checked against `~/.ssh/known_hosts` and Bastion's own file; new keys are confirmed by
+  checked against `~/.ssh/known_hosts` and Serverus's own file; new keys are confirmed by
   fingerprint and pinned, and changed keys show a warning.
 - Keep-alives detect dead connections, and you can be notified when a server drops.
 
@@ -90,8 +90,8 @@ giode build windows-installer
 giode build android
 ```
 
-Data lives in the platform's configuration folder (`~/.config/Bastion`,
-`%AppData%\Bastion`, `~/Library/Application Support/Bastion`); set `BASTION_DATA_DIR` to
+Data lives in the platform's configuration folder (`~/.config/Serverus`,
+`%AppData%\Serverus`, `~/Library/Application Support/Serverus`); set `SERVERUS_DATA_DIR` to
 use another folder (portable installs, testing).
 
 ## Tests

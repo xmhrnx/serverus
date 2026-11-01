@@ -22,7 +22,7 @@ type Server struct {
 	// KeyPath is the private key file for AuthKey.
 	KeyPath string `json:"keyPath,omitempty"`
 	// JumpHostID is the ID of another SSH server to tunnel through
-	// (a bastion host), empty to connect directly.
+	// (a serverus host), empty to connect directly.
 	JumpHostID string `json:"jumpHostId,omitempty"`
 	// FTPSecure upgrades FTP connections with explicit TLS (FTPS).
 	FTPSecure bool `json:"ftpSecure,omitempty"`

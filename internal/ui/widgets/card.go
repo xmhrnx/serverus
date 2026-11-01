@@ -3,7 +3,7 @@ package widgets
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // cardBase is the look every card shares: a raised surface with a hairline

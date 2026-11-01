@@ -1,4 +1,4 @@
-module github.com/xmhrnx/bastion
+module github.com/xmhrnx/serverus
 
 go 1.26.6
 

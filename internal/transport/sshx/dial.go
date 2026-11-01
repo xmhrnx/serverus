@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Dialer opens SSH connections.
@@ -97,7 +97,7 @@ func (d *Dialer) clientConfig(s domain.Server) (*ssh.ClientConfig, error) {
 		Auth:            auth,
 		HostKeyCallback: d.hostKeyCallback(s),
 		Timeout:         d.opts.Timeout,
-		ClientVersion:   "SSH-2.0-Bastion",
+		ClientVersion:   "SSH-2.0-Serverus",
 	}, nil
 }
 

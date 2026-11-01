@@ -5,7 +5,7 @@ import (
 
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // groupHeader labels a group of servers in the sidebar.

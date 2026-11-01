@@ -3,7 +3,7 @@ package terminal
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // tabChip draws one tab of the strip. The page owns the pressables and

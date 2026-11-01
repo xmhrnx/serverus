@@ -9,8 +9,8 @@ import (
 	"github.com/mehran9675/giode/components/checkbox"
 	"github.com/mehran9675/giode/components/dialog"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // ChmodDialog edits a file's permission bits as a 3×3 grid.

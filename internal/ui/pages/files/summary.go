@@ -3,7 +3,7 @@ package files
 import (
 	"fmt"
 
-	"github.com/xmhrnx/bastion/internal/ui/format"
+	"github.com/xmhrnx/serverus/internal/ui/format"
 )
 
 // itemsLabel summarizes a listing: "12 files (3.4 MiB), 4 folders".

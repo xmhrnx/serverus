@@ -9,13 +9,13 @@ import (
 	"github.com/mehran9675/giode/components/drawer"
 	"github.com/mehran9675/giode/components/titlebar"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/dialogs"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/pages/settings"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/dialogs"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/pages/settings"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // Prompts are the app-wide dialogs connections use.
@@ -127,7 +127,7 @@ func (r *Root) saved(s domain.Server) {
 func (r *Root) confirmDelete(s domain.Server) {
 	r.env.Confirm(env.Confirmation{
 		Title:       "Delete " + s.Name + "?",
-		Message:     "The server, its tunnels and its saved credentials are removed from Bastion. Nothing changes on the server itself.",
+		Message:     "The server, its tunnels and its saved credentials are removed from Serverus. Nothing changes on the server itself.",
 		Action:      "Delete server",
 		Destructive: true,
 		OnConfirm: func() {

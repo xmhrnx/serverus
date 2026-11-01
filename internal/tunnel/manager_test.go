@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // direct forwards by dialing from this process, standing in for SSH.

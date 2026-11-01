@@ -1,8 +1,8 @@
 package bootstrap
 
 import (
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/env"
 )
 
 // sessionHooks opens auto-start tunnels when a server connects, and

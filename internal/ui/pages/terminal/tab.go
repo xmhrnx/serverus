@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	term "github.com/xmhrnx/bastion/internal/ui/terminal"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	term "github.com/xmhrnx/serverus/internal/ui/terminal"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // tab is one shell.

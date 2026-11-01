@@ -9,7 +9,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/domain"
+	"github.com/xmhrnx/serverus/internal/domain"
 )
 
 // ErrUnsupported is returned when a connection lacks a capability.

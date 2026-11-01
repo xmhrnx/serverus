@@ -3,7 +3,7 @@ package settings
 import (
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // row is one preference: its title and hint on the left, the control

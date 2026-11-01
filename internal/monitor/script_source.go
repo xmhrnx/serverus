@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // ErrNotLinux is returned by ScriptSource when the server isn't Linux:

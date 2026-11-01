@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/sftp"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Home is the SFTP session's starting directory.

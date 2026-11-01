@@ -9,8 +9,8 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/styles/properties"
 
-	"github.com/xmhrnx/bastion/internal/domain"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/domain"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
 // ServerAvatar is a rounded square in the server's accent color with

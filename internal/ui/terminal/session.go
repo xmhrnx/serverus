@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/xmhrnx/bastion/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // Session connects a Screen to a shell: the shell's output is fed to

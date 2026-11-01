@@ -8,10 +8,10 @@ import (
 
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/session"
-	"github.com/xmhrnx/bastion/internal/storage"
-	"github.com/xmhrnx/bastion/internal/transfer"
-	"github.com/xmhrnx/bastion/internal/tunnel"
+	"github.com/xmhrnx/serverus/internal/session"
+	"github.com/xmhrnx/serverus/internal/storage"
+	"github.com/xmhrnx/serverus/internal/transfer"
+	"github.com/xmhrnx/serverus/internal/tunnel"
 )
 
 // Env is the dependency container of the UI.

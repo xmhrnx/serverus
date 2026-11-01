@@ -5,7 +5,7 @@ import (
 
 	"github.com/mehran9675/giode"
 
-	"github.com/xmhrnx/bastion/internal/storage"
+	"github.com/xmhrnx/serverus/internal/storage"
 )
 
 // secureStore adapts giode's keychain access to storage.SecretStore.

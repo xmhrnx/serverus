@@ -7,9 +7,9 @@ import (
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/components/dialog"
 
-	"github.com/xmhrnx/bastion/internal/ui/env"
-	"github.com/xmhrnx/bastion/internal/ui/theme"
-	"github.com/xmhrnx/bastion/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // Confirm asks the user to confirm an action.
