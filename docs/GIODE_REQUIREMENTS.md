@@ -220,3 +220,17 @@ document it.
 
 The generated workflow also runs by hand from the Actions tab. For a release-only
 pipeline it would help to leave it out (or make it a setting).
+
+### 12. `giode doctor` and `giode ci` miss bundletool
+
+`giode build aab` needs `bundletool*.jar` in the SDK's latest build-tools folder. The
+GitHub Ubuntu runner has the SDK, NDK and JDK but not bundletool, so the `giode ci`
+workflow fails at the AAB after the APK has built, while `giode doctor` on the same
+runner reports "Everything giode needs on this computer is installed".
+
+**What Serverus does now:** its workflow downloads bundletool (pinned version) from
+Google's GitHub releases into build-tools before building Android.
+
+**What's needed:** `giode doctor` checks for bundletool when Android is a platform, and
+the `giode ci` workflow installs it, or the CLI fetches and caches it itself as it does
+for gogio's other tools.

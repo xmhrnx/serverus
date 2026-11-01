@@ -96,6 +96,17 @@ jobs:
           # Signed when the repository has the certificate.
           win=""; if [ -n "$GIODE_WINDOWS_CERT_PASS" ]; then win="-release"; fi
           giode build $win -arch amd64 windows-installer msix
+      - name: Install bundletool
+        if: matrix.primary
+        env:
+          BUNDLETOOL_VERSION: "1.18.1"
+        run: |
+          # giode build aab runs Google's bundletool from the SDK's
+          # build-tools folder, which the runner image doesn't include.
+          curl -fsSL -o bundletool.jar "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          sha256sum bundletool.jar
+          for d in "$ANDROID_HOME"/build-tools/*/; do cp bundletool.jar "$d/bundletool-all-${BUNDLETOOL_VERSION}.jar"; done
+          rm bundletool.jar
       - name: Build Android
         if: matrix.primary
         env:
