@@ -90,6 +90,16 @@ giode build windows-installer
 giode build android
 ```
 
+## Releases
+
+Publishing a GitHub release builds every platform and attaches the packages to it
+(`.github/workflows/release.yml`). Tag the release `major.minor.patch.versionCode`, for
+example `1.0.0.1`: the first three parts are the version shown everywhere, the fourth is
+Android's versionCode, which must grow with every Play upload (the giode CLI treats 0 as
+1). Signing uses these repository secrets when present: `ANDROID_KEYSTORE_BASE64` and
+`GIODE_KEYSTORE_PASS`, `WINDOWS_CERT_BASE64` and `GIODE_WINDOWS_CERT_PASS`,
+`MACOS_CERT_BASE64`, `MACOS_CERT_PASS` and `GIODE_NOTARY_PASS`.
+
 Data lives in the platform's configuration folder (`~/.config/Serverus`,
 `%AppData%\Serverus`, `~/Library/Application Support/Serverus`); set `SERVERUS_DATA_DIR` to
 use another folder (portable installs, testing).

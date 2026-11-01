@@ -41,3 +41,6 @@ arch = "amd64"
 [linux]
 categories = ["Network", "System", "Utility"]     # freedesktop menu categories
 # license = "MIT"            # SPDX, for .deb, .rpm and AppStream
+
+[ci]  # .github/workflows/release.yml started from giode ci and is now edited by hand
+trigger = "release"

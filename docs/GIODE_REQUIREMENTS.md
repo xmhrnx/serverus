@@ -189,6 +189,34 @@ press/release pair.
 
 ## The giode CLI
 
-Nothing blocking was found. `giode new`, `giode build linux` and the Gio patches (needed
-for `ui_pointer`/`ui_key` and file drops on Linux) worked as documented. Windows
-cross-compiles with plain `go build` (`GOOS=windows`).
+`giode new`, `giode build linux` and the Gio patches (needed for `ui_pointer`/`ui_key` and
+file drops on Linux) worked as documented. Windows cross-compiles with plain `go build`
+(`GOOS=windows`). Releases showed three gaps:
+
+### 9. Four-part release tags in `giode ci`
+
+Serverus versions releases as `major.minor.patch.versionCode` (`1.0.0.0`), the format
+gogio itself uses for Android. `giode ci` sets `GIODE_VERSION` to the whole tag and
+`GIODE_BUILD` to the run number, and `GIODE_VERSION` must be `major.minor.patch`, so a
+generated workflow can't build from such a tag.
+
+**What Serverus does now:** `.github/workflows/release.yml` started from `giode ci` and
+was edited by hand: a first job splits the tag into `GIODE_VERSION` and `GIODE_BUILD`.
+It must not be regenerated with `giode ci -f`.
+
+**What's needed:** a `[ci]` setting for where the build number comes from, e.g.
+`build = "tag"` (the fourth part of a four-part tag) besides the current run number, and
+for `GIODE_VERSION`/`app.version` to accept a four-part version, taking the fourth part as
+the build.
+
+### 10. A build number of 0 is silently raised to 1
+
+`config.Load` turns `app.build = 0` (and `GIODE_BUILD=0`) into 1, so `1.0.0.0` and
+`1.0.0.1` produce the same Android `versionCode`, and the second can't be uploaded to
+Google Play. Either reject 0 with an error saying the build must be at least 1, or
+document it.
+
+### 11. `giode ci` with `trigger = "release"` adds `workflow_dispatch`
+
+The generated workflow also runs by hand from the Actions tab. For a release-only
+pipeline it would help to leave it out (or make it a setting).
