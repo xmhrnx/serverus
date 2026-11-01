@@ -1,0 +1,107 @@
+@@host
+vm
+@@os
+Ubuntu 24.04.5 LTS
+Linux 6.18.44-fc-v185 x86_64
+@@uptime
+1091.29 4015.34
+@@loadavg
+0.43 0.47 0.35 1/108 14959
+@@cpuinfo
+model name	: Intel(R) Xeon(R) Processor @ 2.10GHz
+@@stat
+cpu  25864 0 6701 401536 792 0 631 658 0 0
+cpu0 6517 0 1760 100197 171 0 309 170 0 0
+cpu1 6104 0 1619 100750 272 0 165 159 0 0
+cpu2 6738 0 1645 100201 151 0 79 170 0 0
+cpu3 6503 0 1676 100386 196 0 77 158 0 0
+@@meminfo
+MemTotal:       16477352 kB
+MemFree:        13000760 kB
+MemAvailable:   15791696 kB
+Buffers:           69688 kB
+Cached:          2851336 kB
+SwapCached:            0 kB
+Active:           856440 kB
+Inactive:        2256320 kB
+Active(anon):         56 kB
+Inactive(anon):   207512 kB
+Active(file):     856384 kB
+Inactive(file):  2048808 kB
+Unevictable:        9468 kB
+Mlocked:            9468 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Zswap:                 0 kB
+Zswapped:              0 kB
+Dirty:             96688 kB
+Writeback:             8 kB
+AnonPages:        201336 kB
+Mapped:           143544 kB
+Shmem:             15836 kB
+KReclaimable:     185768 kB
+Slab:             223360 kB
+SReclaimable:     185768 kB
+SUnreclaim:        37592 kB
+KernelStack:        1792 kB
+PageTables:         2884 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     8238676 kB
+Committed_AS:     428224 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:        6544 kB
+VmallocChunk:          0 kB
+Percpu:             1040 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+Balloon:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:       20480 kB
+DirectMap2M:     2076672 kB
+DirectMap1G:    16777216 kB
+@@df
+Filesystem              Type  1024-blocks     Used Available Capacity Mounted on
+tmpfs                   tmpfs    16477352        0  16477352       0% /dev/shm
+/dev/vda                ext4    264212084 11288984  29026968      29% /
+model_tools_unavailable tmpfs           4        0         4       0% /mnt/sandboxing/model_tools_env/v1/python
+tmpfs                   tmpfs     8238676        0   8238676       0% /sys/fs/cgroup
+tmpfs                   tmpfs        1024        0      1024       0% /run/sandbox-telemetry
+@@diskstats
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       4 loop4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       5 loop5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       6 loop6 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       7 loop7 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 254       0 vda 10293 3220 562730 5569 8058 70913 4938520 16843 0 6812 23137 4281 0 187944 616 583 106
+ 254      16 vdb 9 0 20 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 254      32 vdc 1503 2 248754 324 0 0 0 0 0 256 324 0 0 0 0 0 0
+ 254      48 vdd 31 8 62522 41 0 0 0 0 0 36 41 0 0 0 0 0 0
+ 254      64 vde 20 0 1084 4 0 0 0 0 0 8 4 0 0 0 0 0 0
+ 254      80 vdf 24 0 1302 2 0 0 0 0 0 4 2 0 0 0 0 0 0
+ 253       0 zram0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+@@netdev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo: 394754267   36627    0    0    0     0          0         0 394754267   36627    0    0    0     0       0          0
+  ifb0:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  ifb1:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  eth0: 502143764   43910    0    6    0     0          0         0 16489642   27225    0    0    0     0       0          0
+@@thermal
+@@hwmon
+@@procs
+80
+@@end

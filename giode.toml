@@ -1,0 +1,43 @@
+# giode.toml configures how the giode CLI builds this app.
+# Reference: https://github.com/mehran9675/giode-cli#giodetoml
+
+[app]
+name = "Bastion"
+id = "com.xmhrnx.bastion"            # reverse-DNS, unique to your app; stores never let it change
+version = "0.1.0"
+build = 1                    # raise for every store upload (giode bump)
+icon = "assets/icon.png"
+package = "."
+platforms = ["windows", "macos", "linux", "android"]   # what giode build builds with no target named
+publisher = "xmhrnx"
+description = "Manage, monitor and connect to all your servers over SSH, Telnet, FTP or locally."
+website = ""
+
+[android]
+min_sdk = 21
+permissions = ["network"]
+# keep_alive = true          # lets App.KeepAlive keep work running in the background
+# keystore = "release.keystore"   # created by giode keystore; signs giode build -release
+
+[macos]
+min_os = 11
+# identity = "Developer ID Application: Your Name (TEAMID)"  # signs giode build -release
+# notary_id = "you@example.com"     # notarizes, with the password in $GIODE_NOTARY_PASS
+# notary_team_id = "TEAMID"
+
+[windows]
+arch = "amd64"
+# cc = "x86_64-w64-mingw32-gcc"  # only for cgo apps linking C libraries
+
+[windows.installer]
+# per_machine = true         # install for all users into Program Files (asks for admin)
+# desktop_shortcut = true
+# license = "assets/license.txt"
+
+[windows.signing]
+# certificate = "codesign.pfx"   # created by giode cert (testing) or bought; password in $GIODE_WINDOWS_CERT_PASS
+# timestamp = "http://timestamp.digicert.com"
+
+[linux]
+categories = ["Network", "System", "Utility"]     # freedesktop menu categories
+# license = "MIT"            # SPDX, for .deb, .rpm and AppStream
