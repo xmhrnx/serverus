@@ -1,100 +1,168 @@
 #!/usr/bin/env python3
-"""Draws assets/icon.png: an emerald serpent coiled into an S around a server rack.
+"""Draws assets/icon.png: a server chassis with three rack units as a face,
+framed by long, straight, black curtain hair parted in the middle.
+
 Run from the repository root: python3 scripts/make_icon.py (needs Pillow)."""
-import math
 from PIL import Image, ImageDraw, ImageFilter
-S=1024; K=4; W=S*K
-def lerp(a,b,t): return tuple(int(a[i]+(b[i]-a[i])*t) for i in range(len(a)))
 
-# Background: deep emerald-black rounded square with a soft vignette.
-bg=Image.new("RGBA",(W,W))
-d=ImageDraw.Draw(bg)
-top=(18,46,36); bot=(4,10,8)
+S = 1024          # output size
+K = 4             # supersampling factor
+W = S * K
+
+
+def P(x, y):
+    """Converts unit coordinates to pixels."""
+    return (x * W, y * W)
+
+
+def lerp(a, b, t):
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(len(a)))
+
+
+def bezier(p0, p1, p2, p3, n=60):
+    """Points along a cubic Bézier curve, in unit coordinates."""
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        u = 1 - t
+        x = u**3 * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t**3 * p3[0]
+        y = u**3 * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t**3 * p3[1]
+        pts.append(P(x, y))
+    return pts
+
+
+def path(*segments):
+    pts = []
+    for s in segments:
+        pts.extend(bezier(*s))
+    return pts
+
+
+def mirror(segments):
+    return [tuple((1 - x, y) for x, y in s) for s in segments]
+
+
+# Background: a dark emerald tile.
+bg = Image.new("RGBA", (W, W))
+d = ImageDraw.Draw(bg)
 for y in range(W):
-    d.line([(0,y),(W,y)],fill=lerp(top,bot,y/W)+(255,))
-glow=Image.new("L",(W,W),0)
-ImageDraw.Draw(glow).ellipse([W*0.15,W*0.05,W*0.85,W*0.7],fill=90)
-glow=glow.filter(ImageFilter.GaussianBlur(W*0.08))
-bg.paste(Image.new("RGBA",(W,W),(40,140,95,255)),(0,0),glow)
-mask=Image.new("L",(W,W),0)
-m=int(W*0.07)
-ImageDraw.Draw(mask).rounded_rectangle([m,m,W-m,W-m],radius=int(W*0.22),fill=255)
-img=Image.new("RGBA",(W,W),(0,0,0,0)); img.paste(bg,(0,0),mask)
-d=ImageDraw.Draw(img)
-# Thin silver rim.
+    d.line([(0, y), (W, y)], fill=lerp((22, 58, 44), (5, 14, 11), y / W) + (255,))
+glow = Image.new("L", (W, W), 0)
+ImageDraw.Draw(glow).ellipse([*P(0.18, 0.12), *P(0.82, 0.72)], fill=110)
+glow = glow.filter(ImageFilter.GaussianBlur(W * 0.08))
+bg.paste(Image.new("RGBA", (W, W), (46, 150, 104, 255)), (0, 0), glow)
+tile = Image.new("L", (W, W), 0)
+ImageDraw.Draw(tile).rounded_rectangle([*P(0.07, 0.07), *P(0.93, 0.93)], radius=int(W * 0.22), fill=255)
+img = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+img.paste(bg, (0, 0), tile)
 
-# Server rack: three silver units.
-x0,x1=int(W*0.33),int(W*0.67)
-silver=(176,192,186,255); slot=(10,22,18,255)
+HAIR = (13, 13, 17, 255)
+STRAND = (44, 46, 56)
+SHEEN = (125, 135, 156)
+
+
+def shadow_of(poly, dx=0.006, dy=0.012, blur=0.014, alpha=150):
+    layer = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).polygon([(x + dx * W, y + dy * W) for x, y in poly], fill=(0, 0, 0, alpha))
+    return layer.filter(ImageFilter.GaussianBlur(W * blur))
+
+
+# The outside of one side of the hair, from the parting over the crown
+# and down to the shoulder.
+outer = [
+    ((0.500, 0.160), (0.400, 0.158), (0.262, 0.190), (0.236, 0.330)),
+    ((0.236, 0.330), (0.222, 0.450), (0.222, 0.640), (0.212, 0.800)),
+]
+# The inside: from the shoulder up along the cheek, over the temple and
+# back to the parting.
+inner = [
+    ((0.375, 0.800), (0.372, 0.650), (0.370, 0.480), (0.372, 0.360)),
+    ((0.372, 0.360), (0.376, 0.290), (0.420, 0.225), (0.500, 0.205)),
+]
+# Ragged ends between the outer and inner edges.
+ends = [(0.212, 0.800), (0.222, 0.832), (0.248, 0.842), (0.272, 0.830), (0.300, 0.852),
+        (0.330, 0.838), (0.356, 0.828), (0.375, 0.800)]
+
+
+def side(flip):
+    def f(pts):
+        return [((W - x) if flip else x, y) for x, y in pts]
+    poly = path(*outer) + [P(x, y) for x, y in ends] + path(*inner)
+    return f(poly)
+
+
+# Back hair: the crown behind the head, so nothing shows between the
+# curtains above the face.
+crown = path(*outer) + [P(0.215, 0.70), P(0.785, 0.70)] + list(reversed([(W - x, y) for x, y in path(*outer)]))
+img = Image.alpha_composite(img, shadow_of(crown, dy=0.02, blur=0.025))
+d = ImageDraw.Draw(img)
+d.polygon(crown, fill=HAIR)
+
+# The face: a graphite chassis holding three rack units.
+fx0, fx1, fy0, fy1 = 0.330, 0.670, 0.250, 0.780
+face = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+fd = ImageDraw.Draw(face)
+for y in range(int(fy0 * W), int(fy1 * W)):
+    fd.line([(fx0 * W, y), (fx1 * W, y)], fill=lerp((62, 70, 74), (34, 40, 43), (y / W - fy0) / (fy1 - fy0)) + (255,))
+m = Image.new("L", (W, W), 0)
+ImageDraw.Draw(m).rounded_rectangle([*P(fx0, fy0), *P(fx1, fy1)], radius=int(W * 0.05), fill=255)
+img = Image.alpha_composite(img, shadow_of([P(fx0, fy0), P(fx1, fy0), P(fx1, fy1), P(fx0, fy1)], dy=0.015, blur=0.02))
+img.paste(face, (0, 0), m)
+d = ImageDraw.Draw(img)
+
+x0, x1 = 0.372, 0.628
+silver_top, silver_bottom = (220, 229, 225), (162, 178, 172)
 for i in range(3):
-    y0=int(W*(0.33+i*0.13)); y1=y0+int(W*0.095)
-    d.rounded_rectangle([x0,y0,x1,y1],radius=int(W*0.025),fill=silver)
-    cy=(y0+y1)//2
-    d.rounded_rectangle([x0+int(W*0.17),cy-int(W*0.009),x1-int(W*0.05),cy+int(W*0.009)],radius=int(W*0.009),fill=slot)
-    r=int(W*0.016); cx=x0+int(W*0.065)
-    d.ellipse([cx-r,cy-r,cx+r,cy+r],fill=(30,200,120,255))
+    y0 = 0.330 + i * 0.140
+    y1 = y0 + 0.108
+    unit = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    ud = ImageDraw.Draw(unit)
+    for y in range(int(y0 * W), int(y1 * W)):
+        ud.line([(x0 * W, y), (x1 * W, y)], fill=lerp(silver_top, silver_bottom, (y / W - y0) / (y1 - y0)) + (255,))
+    um = Image.new("L", (W, W), 0)
+    ImageDraw.Draw(um).rounded_rectangle([*P(x0, y0), *P(x1, y1)], radius=int(W * 0.018), fill=255)
+    img.paste(unit, (0, 0), um)
+    d = ImageDraw.Draw(img)
+    cy = (y0 + y1) / 2
+    d.rounded_rectangle([*P(x0 + 0.105, cy - 0.008), *P(x1 - 0.035, cy + 0.008)], radius=int(W * 0.008), fill=(18, 26, 23, 255))
+    r = 0.014
+    d.ellipse([*P(x0 + 0.050 - r, cy - r), *P(x0 + 0.050 + r, cy + r)], fill=(36, 214, 128, 255))
 
-# Serpent: an S-curve coiling around the rack, tapering to the tail.
-def S_curve(t):
-    # t in [0,1]: head top-right -> tail bottom-left
-    a=math.pi*(1.15-2.3*t)
-    x=0.5+0.27*math.cos(a)*(1 if t<0.5 else -1)
-    y=0.20+0.62*t
-    return x,y
-pts=[]
-N=1000
-r=0.150
-for i in range(N+1):
-    t=i/N
-    if t<0.5:
-        th=math.radians(-25-245*(t/0.5)); cx,cy=0.5,0.35
-    else:
-        th=math.radians(-90+250*((t-0.5)/0.5)); cx,cy=0.5,0.35+2*r
-    pts.append(((cx+r*math.cos(th))*W,(cy+r*math.sin(th))*W))
-emer_hi=(80,230,150); emer_lo=(10,120,70)
-shadow=Image.new("RGBA",(W,W),(0,0,0,0)); sd=ImageDraw.Draw(shadow)
-body=Image.new("RGBA",(W,W),(0,0,0,0)); bd=ImageDraw.Draw(body)
-for i,(x,y) in enumerate(pts):
-    t=i/N
-    w=W*(0.050*(1-t)**0.6+0.006)
-    sd.ellipse([x-w+W*0.01,y-w+W*0.014,x+w+W*0.01,y+w+W*0.014],fill=(0,0,0,150))
-    c=lerp(emer_hi,emer_lo,t)
-    bd.ellipse([x-w,y-w,x+w,y+w],fill=c+(255,))
-shadow=shadow.filter(ImageFilter.GaussianBlur(W*0.012))
-img=Image.alpha_composite(img,shadow); img=Image.alpha_composite(img,body)
-d=ImageDraw.Draw(img)
-# A light stripe along the back gives the body some roundness.
-stripe=Image.new("RGBA",(W,W),(0,0,0,0)); d=ImageDraw.Draw(stripe)
-for i,(x,y) in enumerate(pts[:-120]):
-    t=i/N
-    w=W*(0.050*(1-t)**0.6+0.006)
-    nx,ny=pts[i+3]
-    ang=math.atan2(ny-y,nx-x)-math.pi/2
-    ox,oy=x+math.cos(ang)*w*0.38,y+math.sin(ang)*w*0.38
-    hw2=w*0.14
-    d.ellipse([ox-hw2,oy-hw2,ox+hw2,oy+hw2],fill=(190,255,215,255))
-stripe.putalpha(stripe.getchannel("A").point(lambda a: a*0.32))
-img=Image.alpha_composite(img,stripe)
-d=ImageDraw.Draw(img)
-# Head at the start of the curve.
-hx,hy=pts[0]; nx,ny=pts[12]
-ang=math.atan2(hy-ny,hx-nx)
-hw,hl=W*0.058,W*0.085
-def rot(px,py): return (hx+px*math.cos(ang)-py*math.sin(ang), hy+px*math.sin(ang)+py*math.cos(ang))
-hcx,hcy=rot(hl*0.35,0)
-hd=Image.new("RGBA",(W,W),(0,0,0,0)); hdd=ImageDraw.Draw(hd)
-hdd.ellipse([W/2-hl*0.75,W/2-hw,W/2+hl*0.75,W/2+hw],fill=emer_hi+(255,))
-hd=hd.rotate(-math.degrees(ang),center=(W/2,W/2),resample=Image.BICUBIC)
+# Front curtains over the temples and cheeks.
+for flip in (False, True):
+    poly = side(flip)
+    img = Image.alpha_composite(img, shadow_of(poly, dx=(-0.006 if flip else 0.006)))
+    d = ImageDraw.Draw(img)
+    d.polygon(poly, fill=HAIR)
 
-img=Image.alpha_composite(img,hd.transform((W,W),Image.AFFINE,(1,0,W/2-hcx,0,1,W/2-hcy)))
-d=ImageDraw.Draw(img)
-ex,ey=rot(hl*0.55,-hw*0.42); er=W*0.014
-d.ellipse([ex-er,ey-er,ex+er,ey+er],fill=(250,214,90,255))
-d.ellipse([ex-er*0.35,ey-er,ex+er*0.35,ey+er],fill=(10,14,12,255))
-# Forked tongue.
-tx,ty=rot(hl*0.95,0); t1=rot(hl*1.4,-hw*0.2); t2=rot(hl*1.4,hw*0.2); tm=rot(hl*1.2,0)
-d.line([ (tx,ty),tm],fill=(220,60,70,255),width=int(W*0.007))
-d.line([tm,t1],fill=(220,60,70,255),width=int(W*0.006)); d.line([tm,t2],fill=(220,60,70,255),width=int(W*0.006))
+# Strands: thin lines following the fall of the hair, and a greasy sheen
+# where it curves over the crown.
+lines = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+ld = ImageDraw.Draw(lines)
+strands = [
+    ((0.47, 0.172), (0.36, 0.180), (0.28, 0.230), (0.258, 0.400), (0.250, 0.640), (0.240, 0.815)),
+    ((0.49, 0.190), (0.40, 0.205), (0.33, 0.260), (0.315, 0.420), (0.310, 0.650), (0.300, 0.840)),
+    ((0.48, 0.200), (0.41, 0.225), (0.36, 0.290), (0.350, 0.440), (0.352, 0.640), (0.348, 0.830)),
+    ((0.46, 0.180), (0.38, 0.195), (0.30, 0.250), (0.280, 0.420), (0.272, 0.660), (0.262, 0.835)),
+]
+for st in strands:
+    for flip in (False, True):
+        a, b, c, e, f, g = st
+        pts = bezier(a, b, c, e, n=50) + bezier(e, f, f, g, n=50)
+        if flip:
+            pts = [(W - x, y) for x, y in pts]
+        ld.line(pts, fill=STRAND + (255,), width=int(W * 0.004))
+for flip in (False, True):
+    pts = bezier((0.47, 0.168), (0.38, 0.170), (0.30, 0.200), (0.268, 0.300), n=80)
+    if flip:
+        pts = [(W - x, y) for x, y in pts]
+    ld.line(pts, fill=SHEEN + (170,), width=int(W * 0.010))
+lines = lines.filter(ImageFilter.GaussianBlur(W * 0.003))
+img = Image.alpha_composite(img, lines)
 
-img=img.resize((S,S),Image.LANCZOS)
+# The parting.
+d = ImageDraw.Draw(img)
+d.line([P(0.5, 0.158), P(0.5, 0.215)], fill=(70, 74, 84, 255), width=int(W * 0.005))
+
+img = img.resize((S, S), Image.LANCZOS)
 img.save("assets/icon.png")
