@@ -24,6 +24,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/shell"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/tray"
 )
 
 // AppID identifies the app to the keychain and the single-instance lock.
@@ -58,17 +59,24 @@ func Run() error {
 		Toasts:  giode.Toaster().Placement(giode.ToastBottomEnd).Max(4).Duration(5 * time.Second),
 	}
 	var root *shell.Root
+	settings := repo.Settings()
 	e.App = giode.New(giode.Config{
-		Title:      "Serverus",
-		Size:       image.Pt(1380, 880),
-		MinSize:    image.Pt(980, 640),
-		Resizable:  true,
-		Frameless:  platform.Desktop,
-		Center:     true,
-		Background: "theme.background",
-		Icon:       assets.Icon,
-		Logger:     log.Default(),
-		LogLevel:   giode.LogLevelWarning,
+		Title:     "Serverus",
+		Size:      image.Pt(1380, 880),
+		MinSize:   image.Pt(980, 640),
+		Resizable: true,
+		Frameless: platform.Desktop,
+		// The tray settings are read once: giode takes them at start.
+		MinimizeToTray: settings.MinimizeToTray,
+		CloseToTray:    settings.CloseToTray,
+		// A second launch (from the start menu, while Serverus sits in
+		// the tray) brings the running window back instead.
+		SingleInstanceLock: &giode.SingleInstanceLock{UniqueID: AppID},
+		Center:             true,
+		Background:         "theme.background",
+		Icon:               assets.Icon,
+		Logger:             log.Default(),
+		LogLevel:           giode.LogLevelWarning,
 		OnFileDrop: func(paths []string) {
 			if root != nil {
 				root.HandleDrop(paths)
@@ -95,8 +103,13 @@ func Run() error {
 	}
 	e.Tunnels = tunnel.NewManager(e.App.Invalidate)
 	e.Transfers = transfer.NewQueue(3, e.App.Invalidate)
-	e.Sessions = session.NewManager(dialerWith(creds), e.App.Invalidate, e.MetricsInterval, sessionHooks(e))
+	var trayIcon *tray.Tray
+	e.Sessions = session.NewManager(dialerWith(creds), func() {
+		e.App.Invalidate()
+		trayIcon.Sync()
+	}, e.MetricsInterval, sessionHooks(e))
+	trayIcon = tray.Install(e, assets.TrayIcon, assets.TrayTemplate)
 
-	root = shell.NewRoot(e, shell.Config{DataDir: dir, Prompts: prompts, Creds: creds, Dialers: dialerWith})
+	root = shell.NewRoot(e, shell.Config{DataDir: dir, Prompts: prompts, Creds: creds, Dialers: dialerWith, Tray: trayIcon})
 	return e.App.Run(func() giode.Element { return root })
 }

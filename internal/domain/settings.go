@@ -26,6 +26,12 @@ type Settings struct {
 	// NotifyOnDisconnect shows a system notification when a server
 	// drops its connection.
 	NotifyOnDisconnect bool `json:"notifyOnDisconnect"`
+	// MinimizeToTray hides the window in the system tray when it's
+	// minimized.
+	MinimizeToTray bool `json:"minimizeToTray"`
+	// CloseToTray keeps the app running in the tray when the window is
+	// closed, so connections, tunnels and transfers carry on.
+	CloseToTray bool `json:"closeToTray"`
 }
 
 // DefaultSettings are the preferences of a fresh install.

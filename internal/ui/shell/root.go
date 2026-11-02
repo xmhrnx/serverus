@@ -16,6 +16,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/pages/settings"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
+	"github.com/xmhrnx/serverus/internal/ui/tray"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
@@ -48,6 +49,7 @@ type Root struct {
 	navBtn    *widgets.ToolButton
 	transBtn  *widgets.ToolButton
 	themeBtn  *widgets.ToolButton
+	tray      *tray.Tray
 }
 
 // Config is what the shell needs besides the environment.
@@ -56,11 +58,13 @@ type Config struct {
 	Prompts Prompts
 	Creds   *dialogs.Credentials
 	Dialers dialogs.DialerFactory
+	// Tray is the tray icon, nil where there's none.
+	Tray *tray.Tray
 }
 
 // NewRoot builds the window's content.
 func NewRoot(e *env.Env, cfg Config) *Root {
-	r := &Root{env: e, views: map[string]*ServerView{}, prompts: cfg.Prompts}
+	r := &Root{env: e, views: map[string]*ServerView{}, prompts: cfg.Prompts, tray: cfg.Tray}
 	r.confirm = dialogs.NewConfirm()
 	e.SetConfirmer(r.confirm.Show)
 	r.editor = dialogs.NewServerDialog(e, cfg.Creds, cfg.Dialers, r.saved)
@@ -186,6 +190,7 @@ func (r *Root) main() giode.Element {
 
 // Layout draws the window.
 func (r *Root) Layout(gtx layout.Context) layout.Dimensions {
+	r.tray.Sync()
 	if theme.IsDark() {
 		r.themeBtn.SetIcon("sun")
 	} else {

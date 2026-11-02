@@ -13,3 +13,14 @@ var Files embed.FS
 //
 //go:embed icon.png
 var Icon []byte
+
+// TrayIcon is the system tray icon as PNG bytes.
+//
+//go:embed tray.png
+var TrayIcon []byte
+
+// TrayTemplate is the macOS menu bar icon: black on transparency, tinted
+// by macOS for light and dark menu bars.
+//
+//go:embed tray-template.png
+var TrayTemplate []byte

@@ -40,6 +40,8 @@ type Page struct {
 	scrollback *dropdown.Select
 	confirm    *toggle.Switch
 	notify     *toggle.Switch
+	minimize   *toggle.Switch
+	closeTray  *toggle.Switch
 	hidden     *toggle.Switch
 	scroll     *scroll.Scroll
 }
@@ -67,6 +69,8 @@ func New(e *env.Env, dataDir string, onChange func(domain.Settings)) *Page {
 	}
 	p.confirm = sw("Ask before deleting, killing or stopping", s.ConfirmDestructive, func(s *domain.Settings, v bool) { s.ConfirmDestructive = v })
 	p.notify = sw("Notify me when a server disconnects", s.NotifyOnDisconnect, func(s *domain.Settings, v bool) { s.NotifyOnDisconnect = v })
+	p.minimize = sw("Minimize to the tray", s.MinimizeToTray, func(s *domain.Settings, v bool) { s.MinimizeToTray = v })
+	p.closeTray = sw("Keep running in the tray when the window is closed", s.CloseToTray, func(s *domain.Settings, v bool) { s.CloseToTray = v })
 	p.hidden = sw("Show hidden files", s.ShowHiddenFiles, func(s *domain.Settings, v bool) { s.ShowHiddenFiles = v })
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	return p
@@ -99,13 +103,18 @@ func (p *Page) content() giode.Element {
 	if version == "" {
 		version = "development build"
 	}
+	sections := []giode.Element{
+		giode.Text("Settings", theme.Title.With(giode.Styles{FontSize: theme.Text2XL})),
+		section("sun", "Appearance",
+			row("Theme", "", p.theme),
+			row("Terminal text size", "Applies to new terminal tabs", p.fontSize),
+		),
+	}
+	if w := p.windowSection(); w != nil {
+		sections = append(sections, w)
+	}
 	return giode.Box(giode.Styles{Width: -1, Justify: giode.JustifyCenter, Padding: giode.UniformInset(theme.Space6)},
-		giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1, MaxWidth: 760},
-			giode.Text("Settings", theme.Title.With(giode.Styles{FontSize: theme.Text2XL})),
-			section("sun", "Appearance",
-				row("Theme", "", p.theme),
-				row("Terminal text size", "Applies to new terminal tabs", p.fontSize),
-			),
+		giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1, MaxWidth: 760}, append(sections,
 			section("activity", "Monitoring",
 				row("Refresh metrics", "How often servers are sampled while connected", p.interval),
 				p.notify,
@@ -124,7 +133,7 @@ func (p *Page) content() giode.Element {
 				widgets.KeyValue("Data folder", p.dataDir),
 				widgets.KeyValue("Built with", "giode · Gio · Go "+runtime.Version()[2:]),
 			),
-		),
+		)...),
 	)
 }
 

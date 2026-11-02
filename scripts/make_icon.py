@@ -2,13 +2,17 @@
 """Draws the app icon: a server chassis with three rack units as a face,
 framed by long, straight, black curtain hair parted in the middle.
 
-It writes three files:
+It writes five files:
   assets/icon.png                the icon on its rounded green tile
   assets/android-background.png  Android's adaptive icon background layer
   assets/android-foreground.png  Android's adaptive icon foreground layer: the
                                  character alone, inside the 66dp safe zone of
                                  the 108dp canvas, so launchers can mask the
                                  icon to any shape without edges showing
+  assets/tray.png                the system tray icon, 64 px
+  assets/tray-template.png       the macOS menu bar icon: a black silhouette
+                                 with the rack units cut out, which macOS
+                                 tints for light and dark menu bars
 
 Run from the repository root: python3 scripts/make_icon.py (needs Pillow)."""
 from PIL import Image, ImageDraw, ImageFilter
@@ -192,3 +196,22 @@ foreground = Image.new("RGBA", (W, W), (0, 0, 0, 0))
 offset = int(W * (1 - scale) / 2)
 foreground.alpha_composite(small, (offset, offset - int(W * 0.01)))
 foreground.resize((S, S), Image.LANCZOS).save("assets/android-foreground.png")
+
+# Tray icons: the character alone, cropped to its bounds.
+box = character.getbbox()
+side = max(box[2] - box[0], box[3] - box[1])
+cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
+crop = character.crop((cx - side // 2, cy - side // 2, cx + side // 2, cy + side // 2))
+crop.resize((64, 64), Image.LANCZOS).save("assets/tray.png")
+
+# The template keeps the shape: dark hair and chassis become black, the
+# light rack units become holes.
+template = Image.new("RGBA", crop.size, (0, 0, 0, 0))
+src = crop.load()
+dst = template.load()
+for y in range(crop.size[1]):
+    for x in range(crop.size[0]):
+        r, g, b, a = src[x, y]
+        if a and (r * 299 + g * 587 + b * 114) // 1000 < 110:
+            dst[x, y] = (0, 0, 0, a)
+template.resize((64, 64), Image.LANCZOS).save("assets/tray-template.png")

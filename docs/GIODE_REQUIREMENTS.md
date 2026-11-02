@@ -1,8 +1,9 @@
 # What Serverus needs from giode and the giode CLI
 
-These are the gaps found while building Serverus on giode `v0.1.20-alpha.1` and the giode
-CLI at `main`. Where something was missing, Serverus does without it rather than working
-around it; each item says what the app does today and what would let it do better.
+These are the gaps found while building Serverus on giode `v0.1.20-alpha.1` (now `v0.1.21-alpha.1`) and the giode
+CLI at `main`. Where something is missing, Serverus does without it; where a giode bug
+broke a feature outright, it uses a small correction that names the bug. Each item says
+what the app does today and what would let it do better.
 
 Items are ordered by how much they affect the app.
 
@@ -40,38 +41,11 @@ don't close the menu.
 
 ---
 
-## 2. Keyboard shortcuts
+## 2. Keyboard shortcuts — resolved in v0.1.21
 
-**Area:** new package (the docs already refer to it)
-**Kind:** missing feature
-
-### What happens
-
-`Menu.Shortcut("Ctrl+O")` is documented as "display only; handle the key with the
-`shortcut` package", and `docs/components/menu.md` says the same, but there is no
-`shortcut` package.
-
-### What Serverus does now
-
-No app-wide shortcuts. The terminal handles its own keys (Ctrl+Shift+C/V, Shift+PageUp)
-because it owns the keyboard focus.
-
-### What's needed
-
-A way to register window-wide shortcuts that fire whatever has focus, unless a focused
-text field or terminal consumes the key first:
-
-```go
-giode.Shortcuts(
-    giode.Shortcut("Mod+T", newTerminalTab),     // Mod = Cmd on macOS, Ctrl elsewhere
-    giode.Shortcut("Mod+K", focusServerSearch),
-    giode.Shortcut("Mod+,", openSettings),
-    giode.Shortcut("F5", refreshPage),
-)
-```
-
-Serverus would use: new terminal tab, close tab, next/previous tab, focus the server
-search, open settings, refresh the current page, and Mod+1…9 to switch pages.
+Reported because the `shortcut` package the menu docs referred to didn't exist.
+giode v0.1.21-alpha.1 added `OnKey`, app shortcuts that get only the keys nothing else
+took; Serverus is on that version and can adopt it.
 
 ---
 
@@ -209,13 +183,71 @@ pairing cards whose heights differ much (cores and temperatures now take a row e
 
 ---
 
+## 10. Launch at login
+
+**Area:** new platform service (and the CLI's installers)
+**Kind:** missing feature
+
+### What's needed
+
+Serverus keeps connections, tunnels and transfers running from the tray, so users want
+it to start when they sign in, straight into the tray. giode has the tray
+(`App.Tray`, `MinimizeToTray`, `CloseToTray`) but no way to register the app to start
+at login, and no way to start hidden.
+
+**What Serverus does now:** nothing; there's no "Start at login" setting. Registering
+by hand (registry keys, LaunchAgents, autostart files) is the kind of platform work
+that belongs in giode.
+
+Proposed API:
+
+```go
+err := app.SetLaunchAtLogin(true)   // register or unregister for the current user
+on := app.LaunchAtLogin()           // whether it's registered
+if giode.LaunchedAtLogin() { ... }  // this run was started by the system at login
+```
+
+and a start state that goes straight to the tray, without showing the window:
+
+```go
+giode.Config{WindowStartState: giode.WindowStartHidden} // with a tray icon set up
+```
+
+Per platform:
+
+| Platform | Mechanism |
+| --- | --- |
+| Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value with the executable path and a `--giode-login` argument; for MSIX packages, the `windows.startupTask` extension (see the CLI below) and `StartupTask.RequestEnableAsync` |
+| macOS | `SMAppService.mainApp.register()` on macOS 13+, a `~/Library/LaunchAgents` plist before that |
+| Linux | an XDG autostart entry, `~/.config/autostart/<app id>.desktop`, with `X-GNOME-Autostart-enabled=true`; inside Flatpak, the Background portal's `RequestBackground` with `autostart: true` |
+| Android, iOS | not applicable (`ErrNotSupported`) |
+
+`LaunchedAtLogin` reports whether the login argument (or the platform's equivalent) was
+passed, so the app can start hidden only then.
+
+**CLI:** `giode build msix` needs a `[windows.msix] startup_task = true` option that adds
+the `uap5:StartupTask` extension to the manifest (MSIX apps can't use the Run key),
+and the setup program could offer a "Start at login" checkbox.
+
+## 11. Changing the tray behavior while running
+
+**Area:** `App`
+**Kind:** API
+
+`MinimizeToTray` and `CloseToTray` are read from `Config` only, so the settings page
+can't apply them right away: Serverus saves the choice and says it takes effect at the
+next start. `App.SetMinimizeToTray(bool)` and `App.SetCloseToTray(bool)` would let it
+apply immediately.
+
+---
+
 ## The giode CLI
 
 `giode new`, `giode build linux` and the Gio patches (needed for `ui_pointer`/`ui_key` and
 file drops on Linux) worked as documented. Windows cross-compiles with plain `go build`
 (`GOOS=windows`). Releases showed three gaps:
 
-### 10. Four-part release tags in `giode ci`
+### 12. Four-part release tags in `giode ci`
 
 Serverus versions releases as `major.minor.patch.versionCode` (`1.0.0.0`), the format
 gogio itself uses for Android. `giode ci` sets `GIODE_VERSION` to the whole tag and
@@ -231,19 +263,19 @@ It must not be regenerated with `giode ci -f`.
 for `GIODE_VERSION`/`app.version` to accept a four-part version, taking the fourth part as
 the build.
 
-### 11. A build number of 0 is silently raised to 1
+### 13. A build number of 0 is silently raised to 1
 
 `config.Load` turns `app.build = 0` (and `GIODE_BUILD=0`) into 1, so `1.0.0.0` and
 `1.0.0.1` produce the same Android `versionCode`, and the second can't be uploaded to
 Google Play. Either reject 0 with an error saying the build must be at least 1, or
 document it.
 
-### 12. `giode ci` with `trigger = "release"` adds `workflow_dispatch`
+### 14. `giode ci` with `trigger = "release"` adds `workflow_dispatch`
 
 The generated workflow also runs by hand from the Actions tab. For a release-only
 pipeline it would help to leave it out (or make it a setting).
 
-### 13. `giode doctor` and `giode ci` miss bundletool
+### 15. `giode doctor` and `giode ci` miss bundletool
 
 `giode build aab` needs `bundletool*.jar` in the SDK's latest build-tools folder. The
 GitHub Ubuntu runner has the SDK, NDK and JDK but not bundletool, so the `giode ci`
