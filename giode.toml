@@ -43,6 +43,8 @@ arch = "amd64"
 # (giode cert, or a bought one) must have exactly this subject, or the
 # Partner Center publisher ID when the package goes to the Store.
 publisher = "CN=xmhrnx"
+# Lets the MSIX package start at login (Settings > Start at login).
+startup_task = true
 
 [windows.signing]
 # certificate = "codesign.pfx"   # created by giode cert (testing) or bought; password in $GIODE_WINDOWS_CERT_PASS

@@ -10,7 +10,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.7
 	github.com/charmbracelet/x/vt v0.1.0
 	github.com/jlaffaye/ftp v0.2.4
-	github.com/mehran9675/giode v0.1.22-alpha.1
+	github.com/mehran9675/giode v0.1.23-alpha.1
 	github.com/pkg/sftp v1.13.12
 	github.com/shirou/gopsutil/v4 v4.26.10
 	golang.org/x/crypto v0.58.0

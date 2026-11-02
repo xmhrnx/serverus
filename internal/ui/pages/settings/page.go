@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"slices"
 	"strconv"
+	"time"
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
@@ -42,6 +43,8 @@ type Page struct {
 	notify     *toggle.Switch
 	minimize   *toggle.Switch
 	closeTray  *toggle.Switch
+	login      *toggle.Switch
+	loginRead  time.Time
 	hidden     *toggle.Switch
 	scroll     *scroll.Scroll
 }
@@ -69,8 +72,15 @@ func New(e *env.Env, dataDir string, onChange func(domain.Settings)) *Page {
 	}
 	p.confirm = sw("Ask before deleting, killing or stopping", s.ConfirmDestructive, func(s *domain.Settings, v bool) { s.ConfirmDestructive = v })
 	p.notify = sw("Notify me when a server disconnects", s.NotifyOnDisconnect, func(s *domain.Settings, v bool) { s.NotifyOnDisconnect = v })
-	p.minimize = sw("Minimize to the tray", s.MinimizeToTray, func(s *domain.Settings, v bool) { s.MinimizeToTray = v })
-	p.closeTray = sw("Keep running in the tray when the window is closed", s.CloseToTray, func(s *domain.Settings, v bool) { s.CloseToTray = v })
+	p.minimize = sw("Minimize to the tray", s.MinimizeToTray, func(s *domain.Settings, v bool) {
+		s.MinimizeToTray = v
+		e.App.SetMinimizeToTray(v)
+	})
+	p.closeTray = sw("Keep running in the tray when the window is closed", s.CloseToTray, func(s *domain.Settings, v bool) {
+		s.CloseToTray = v
+		e.App.SetCloseToTray(v)
+	})
+	p.login = giode.Input.Switch("Start at login", giode.Styles{Color: theme.Text, FontSize: theme.TextBase}).OnChange(p.setLaunchAtLogin)
 	p.hidden = sw("Show hidden files", s.ShowHiddenFiles, func(s *domain.Settings, v bool) { s.ShowHiddenFiles = v })
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	return p

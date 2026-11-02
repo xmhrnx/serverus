@@ -68,8 +68,9 @@ macOS and Linux, and builds for Android.
   or **run on several servers at once** and compare the results side by side.
 
 **Interface**
-- A tray icon to open the window, connect and disconnect servers, and quit; minimize
-  to the tray, and on Windows and macOS keep running there when the window closes.
+- Start at login, straight into the tray. A tray icon opens the window, connects and
+  disconnects servers, and quits; minimize to the tray, and on Windows and macOS keep
+  running there when the window closes.
 - Keyboard shortcuts (listed in Settings): search servers, add a server, settings, a
   new terminal tab, and Ctrl/⌘+1–8 to switch pages.
 - Dark and light themes (or follow the system), a custom title bar, and a layout that

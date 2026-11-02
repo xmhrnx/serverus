@@ -61,14 +61,15 @@ func Run() error {
 	var root *shell.Root
 	settings := repo.Settings()
 	e.App = giode.New(giode.Config{
-		Title:     "Serverus",
-		Size:      image.Pt(1380, 880),
-		MinSize:   image.Pt(980, 640),
-		Resizable: true,
-		Frameless: platform.Desktop,
-		// The tray settings are read once: giode takes them at start.
+		Title:          "Serverus",
+		Size:           image.Pt(1380, 880),
+		MinSize:        image.Pt(980, 640),
+		Resizable:      true,
+		Frameless:      platform.Desktop,
 		MinimizeToTray: settings.MinimizeToTray,
 		CloseToTray:    settings.CloseToTray,
+		// Started at login, wait in the tray rather than open a window.
+		StartInTray: giode.StartInTrayAtLogin,
 		// A second launch (from the start menu, while Serverus sits in
 		// the tray) brings the running window back instead.
 		SingleInstanceLock: &giode.SingleInstanceLock{UniqueID: AppID},
