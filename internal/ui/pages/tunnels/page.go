@@ -18,6 +18,7 @@ type Page struct {
 	session *session.Session
 
 	add     *giode.ButtonElement
+	addIcon *widgets.ToolButton
 	dialog  *Dialog
 	scroll  *scroll.Scroll
 	toggles *giode.KeyedCache[string, *widgets.ToolButton]
@@ -36,6 +37,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		return p.env.Repo.SaveTunnel(t)
 	})
 	p.add = widgets.Button(widgets.Primary, "New tunnel", "plus").OnClick(func() { p.dialog.Add(s.Server().ID) })
+	p.addIcon = widgets.NewToolButton("plus", "New tunnel", func() { p.dialog.Add(s.Server().ID) }).Tint(theme.Primary)
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	p.toggles = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	p.edits = giode.NewKeyedCache[string, *widgets.ToolButton]()
@@ -123,7 +125,11 @@ func (p *Page) content() giode.Element {
 		})
 		rows = append(rows, tunnelRow(t, st, toggle, copyAddr, edit, del))
 	}
-	return giode.Stack(giode.Styles{Gap: theme.Space3, Width: -1, Padding: giode.UniformInset(theme.Space4)}, rows...)
+	pad := giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space2)
+	}
+	return giode.Stack(giode.Styles{Gap: theme.Space3, Width: -1, Padding: pad}, rows...)
 }
 
 // Layout draws the page.
@@ -137,9 +143,19 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 		).Layout(gtx)
 	}
 	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1},
-		giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Padding: giode.Inset{Left: theme.Space4, Right: theme.Space4, Top: theme.Space4}},
-			giode.Box(giode.Styles{FlexGrow: 1}, giode.Text("Forward local ports through this server. Tunnels close when it disconnects.", theme.Caption)),
-			p.add),
+		p.header(),
 		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.scroll),
 	), p.dialog).Layout(gtx)
+}
+
+// header explains tunnels next to the add button; on a phone the button
+// shrinks to an icon so the sentence keeps its width.
+func (p *Page) header() giode.Element {
+	add, pad := giode.Element(p.add), giode.Inset{Left: theme.Space4, Right: theme.Space4, Top: theme.Space4}
+	if giode.Compact() {
+		add, pad = p.addIcon, giode.Inset{Left: theme.Space3, Right: theme.Space2, Top: theme.Space2}
+	}
+	return giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Padding: pad},
+		giode.Box(giode.Styles{FlexGrow: 1}, giode.Text("Forward local ports through this server. Tunnels close when it disconnects.", theme.Caption)),
+		add)
 }

@@ -26,6 +26,7 @@ type Page struct {
 
 	search    *widgets.SearchField
 	add       *giode.ButtonElement
+	addIcon   *widgets.ToolButton
 	scroll    *scroll.Scroll
 	edit      *EditDialog
 	broadcast *BroadcastDialog
@@ -42,6 +43,7 @@ func New(e *env.Env, s *session.Session, toShell func(string)) *Page {
 	p.broadcast = NewBroadcastDialog(e)
 	p.output = dialogs.NewOutputDialog(e)
 	p.add = widgets.Button(widgets.Primary, "New snippet", "plus").OnClick(p.edit.Add)
+	p.addIcon = widgets.NewToolButton("plus", "New snippet", p.edit.Add).Tint(theme.Primary)
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	p.buttons = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	return p
@@ -113,16 +115,25 @@ func (p *Page) content() giode.Element {
 	if len(cards) == 0 {
 		return widgets.EmptyState("scroll-text", "No snippets", "Save the commands you run often, then run them here or on many servers at once.", p.add)
 	}
-	return giode.Stack(giode.Styles{Gap: theme.Space3, Width: -1, Padding: giode.UniformInset(theme.Space4)}, cards...)
+	pad := giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space2)
+	}
+	return giode.Stack(giode.Styles{Gap: theme.Space3, Width: -1, Padding: pad}, cards...)
 }
 
 // Layout draws the page.
 func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
+	search, add := giode.Element(giode.Box(giode.Styles{Width: 320}, p.search)), giode.Element(p.add)
+	pad := giode.Inset{Left: theme.Space4, Right: theme.Space4, Top: theme.Space4}
+	if giode.Compact() {
+		search, add = giode.Box(giode.Styles{Width: -1}, p.search), p.addIcon
+		pad = giode.Inset{Left: theme.Space2, Right: theme.Space2, Top: theme.Space2}
+	}
 	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1},
-		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Padding: giode.Inset{Left: theme.Space4, Right: theme.Space4, Top: theme.Space4}},
-			giode.Box(giode.Styles{Width: 320}, p.search),
-			giode.Box(giode.Styles{FlexGrow: 1}),
-			p.add),
+		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Padding: pad},
+			giode.Box(giode.Styles{FlexGrow: 1}, search),
+			add),
 		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.scroll),
 	), p.edit, p.broadcast, p.output).Layout(gtx)
 }

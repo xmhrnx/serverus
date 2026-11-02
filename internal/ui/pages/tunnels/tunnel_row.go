@@ -33,6 +33,13 @@ func tunnelRow(t domain.Tunnel, st tunnel.Status, actions ...giode.Element) giod
 			giode.Text(label, giode.Styles{Color: tone, FontSize: theme.TextXS, TextOverflow: giode.TextOverflowEllipsis}),
 		),
 	}
+	if giode.Compact() {
+		// On a phone the actions go in a row of their own.
+		return widgets.Card(giode.Styles{Gap: theme.Space3, Padding: giode.SymmetricInset(theme.Space4, theme.Space3), Width: -1},
+			giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Gap: theme.Space4, Wrap: giode.WrapNoWrap}, row...),
+			giode.Row(giode.Styles{Width: -1, Justify: giode.JustifyEnd, Gap: 2, Wrap: giode.WrapNoWrap}, actions...),
+		)
+	}
 	row = append(row, actions...)
 	return widgets.Card(giode.Styles{FlexDirection: giode.FlexDirectionRow, Align: giode.AlignCenter, Gap: theme.Space4, Padding: giode.SymmetricInset(theme.Space4, theme.Space3), Width: -1}, row...)
 }

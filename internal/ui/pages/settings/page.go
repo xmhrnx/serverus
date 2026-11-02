@@ -126,7 +126,11 @@ func (p *Page) content() giode.Element {
 	if k := shortcutsSection(); k != nil {
 		sections = append(sections, k)
 	}
-	return giode.Box(giode.Styles{Width: -1, Justify: giode.JustifyCenter, Padding: giode.UniformInset(theme.Space6)},
+	pad := giode.UniformInset(theme.Space6)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space3)
+	}
+	return giode.Box(giode.Styles{Width: -1, Justify: giode.JustifyCenter, Padding: pad},
 		giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1, MaxWidth: 760}, append(sections,
 			section("activity", "Monitoring",
 				row("Refresh metrics", "How often servers are sampled while connected", p.interval),
