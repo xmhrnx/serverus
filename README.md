@@ -131,6 +131,7 @@ internal/
   session/                   one live connection per server, metrics collection
   transfer/                  background upload/download queue
   tunnel/                    local port forwards
+  platform/                  desktop or phone, macOS or not: decided by build tags
   bootstrap/                 composition root: wires everything and runs the window
   ui/
     theme/                   palettes, type scale, spacing, fonts, icons
@@ -151,6 +152,11 @@ under `transport/` and a case in `connector`.
 
 What the app needs from giode and the CLI that isn't there yet is written up in
 [docs/GIODE_REQUIREMENTS.md](docs/GIODE_REQUIREMENTS.md).
+
+## Icon
+
+`scripts/make_icon.py` (Pillow) draws `assets/icon.png` and Android's adaptive icon
+layers, `assets/android-foreground.png` and `assets/android-background.png`.
 
 ## Licenses
 

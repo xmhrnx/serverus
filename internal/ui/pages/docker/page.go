@@ -3,15 +3,12 @@ package docker
 import (
 	"context"
 	"fmt"
-	"image"
+	"slices"
 	"strings"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
-	"github.com/mehran9675/giode/elements"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -37,15 +34,15 @@ type Page struct {
 	rows     *giode.KeyedCache[string, *giode.PressableElement]
 	toggles  *giode.KeyedCache[string, *widgets.ToolButton]
 	logs     *giode.KeyedCache[string, *widgets.ToolButton]
-	anchors  map[string]*image.Point
-	menu     *menu.Menu
+	anchor   *widgets.ListAnchor
+	menu     *widgets.ContextMenu
 	target   ops.Container
 	output   *dialogs.OutputDialog
 }
 
 // New returns the containers page for s.
 func New(e *env.Env, s *session.Session) *Page {
-	p := &Page{env: e, session: s, anchors: map[string]*image.Point{}}
+	p := &Page{env: e, session: s}
 	p.data = async.NewResource[[]ops.Container](e.Invalidate)
 	p.filter = widgets.NewSearchField("Filter containers", nil)
 	p.rows = giode.NewKeyedCache[string, *giode.PressableElement]()
@@ -53,9 +50,10 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.logs = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	p.list = giode.VirtualList(func() int { return len(p.visible()) }, 58, p.row,
 		giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).ClickFocusesRow(false)
+	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 58)
 	p.output = dialogs.NewOutputDialog(e)
 	act := func(a ops.ContainerAction) func() { return func() { p.do(p.target, a) } }
-	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("play"), "Start", act(ops.ContainerStart)).
 		IconItem(theme.IconSource("square"), "Stop", act(ops.ContainerStop)).
 		IconItem(theme.IconSource("rotate-cw"), "Restart", act(ops.ContainerRestart)).
@@ -65,7 +63,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("scroll-text"), "Logs", func() { p.showLogs(p.target) }).
 		IconItem(theme.IconSource("copy"), "Copy ID", func() { p.env.App.SetClipboard(p.target.ID) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Remove", act(ops.ContainerRemove))
+		IconItem(theme.IconSource("trash-2"), "Remove", act(ops.ContainerRemove)))
 	return p
 }
 
@@ -116,11 +114,6 @@ func (p *Page) row(i int) giode.Element {
 		return giode.Box(giode.Styles{})
 	}
 	id := v[i].ID
-	anchor, ok := p.anchors[id]
-	if !ok {
-		anchor = new(image.Point)
-		p.anchors[id] = anchor
-	}
 	toggle := p.toggles.Get(id, func() *widgets.ToolButton {
 		return widgets.NewToolButton("play", "Start", func() {
 			if c, ok := p.lookup(id); ok {
@@ -140,6 +133,12 @@ func (p *Page) row(i int) giode.Element {
 		})
 	})
 	pr := p.rows.Get(id, func() *giode.PressableElement {
+		openMenu := func(e giode.ClickEvent) {
+			if c, ok := p.lookup(id); ok {
+				p.selected, p.target = id, c
+				p.menu.OpenAt(p.anchor.At(slices.IndexFunc(p.visible(), func(x ops.Container) bool { return x.ID == id }), e))
+			}
+		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
 			c, ok := p.lookup(id)
 			if !ok {
@@ -154,21 +153,10 @@ func (p *Page) row(i int) giode.Element {
 			}
 			return containerRow(c, p.selected == id, ps, giode.Row(giode.Styles{Gap: 2, Wrap: giode.WrapNoWrap}, toggle, logs))
 		}).OnClick(func(giode.ClickEvent) { p.selected = id }).
-			OnSecondaryClick(func(e giode.ClickEvent) {
-				if c, ok := p.lookup(id); ok {
-					p.selected, p.target = id, c
-					p.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-				}
-			})
+			OnSecondaryClick(openMenu).OnLongPress(openMenu)
 	})
 	pr.Label(v[i].Name)
-	return giode.Raw(func(gtx layout.Context) layout.Dimensions {
-		// Track after laying out: click handlers run inside Layout and
-		// need the exact position from the last frame.
-		dims := pr.Layout(gtx)
-		elements.TrackPosition(anchor)
-		return dims
-	})
+	return pr
 }
 
 func (p *Page) do(c ops.Container, a ops.ContainerAction) {
@@ -221,9 +209,13 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 			running++
 		}
 	}
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: giode.UniformInset(theme.Space4), Gap: theme.Space3},
+	filterWidth, pad := giode.Styles{Width: 300}, giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		filterWidth, pad = giode.Styles{FlexGrow: 1, Width: -1}, giode.UniformInset(theme.Space2)
+	}
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
 		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
-			giode.Box(giode.Styles{Width: 300}, p.filter),
+			giode.Box(filterWidth, p.filter),
 			giode.Box(giode.Styles{FlexGrow: 1}),
 			widgets.Pill(fmt.Sprintf("%d running", running), theme.Success),
 			widgets.Pill(fmt.Sprintf("%d total", len(all)), theme.Muted),
@@ -248,5 +240,5 @@ func (p *Page) body() giode.Element {
 	if len(p.visible()) == 0 {
 		return widgets.EmptyState("container", "No containers", "Containers you run on this server show up here.")
 	}
-	return p.list
+	return p.anchor.Wrap(p.list)
 }

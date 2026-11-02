@@ -3,16 +3,12 @@ package processes
 import (
 	"context"
 	"fmt"
-	"image"
 	"sort"
 	"strings"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
-	"github.com/mehran9675/giode/elements"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -46,19 +42,27 @@ type Page struct {
 	selected int32
 	paused   bool
 
-	filter  *widgets.SearchField
-	headers []*widgets.SortHeader
-	list    *giode.VirtualListElement
-	rows    *giode.KeyedCache[int32, *giode.PressableElement]
-	anchors map[int32]*image.Point
-	menu    *menu.Menu
-	target  ops.Process
-	pause   *widgets.ToolButton
+	// shown is the list as laid out this frame and seen as it was on
+	// screen last frame. The list re-sorts as usage changes, so a click
+	// is matched against what the user saw when they clicked.
+	shown []ops.Process
+	seen  []ops.Process
+
+	filter      *widgets.SearchField
+	headers     []*widgets.SortHeader
+	list        *giode.VirtualListElement
+	compactList *giode.VirtualListElement
+	rows        *giode.KeyedCache[int, *giode.PressableElement]
+	anchor      *widgets.ListAnchor
+	phoneAnchor *widgets.ListAnchor
+	menu        *widgets.ContextMenu
+	target      ops.Process
+	pause       *widgets.ToolButton
 }
 
 // New returns the process list for s.
 func New(e *env.Env, s *session.Session) *Page {
-	p := &Page{env: e, session: s, sortBy: byCPU, desc: true, anchors: map[int32]*image.Point{}}
+	p := &Page{env: e, session: s, sortBy: byCPU, desc: true}
 	p.data = async.NewResource[[]ops.Process](e.Invalidate)
 	p.filter = widgets.NewSearchField("Filter by name, user, command or PID", nil)
 	cur := func() (int, bool) { return p.sortBy, p.desc }
@@ -70,17 +74,21 @@ func New(e *env.Env, s *session.Session) *Page {
 		widgets.NewSortHeader("Running", byTime, timeWidth, cur, p.sort),
 		widgets.NewSortHeader("Process", byName, 0, cur, p.sort),
 	}
-	p.rows = giode.NewKeyedCache[int32, *giode.PressableElement]()
-	p.list = giode.VirtualList(func() int { return len(p.visible()) }, 46, p.row,
-		giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).ClickFocusesRow(false)
+	p.rows = giode.NewKeyedCache[int, *giode.PressableElement]()
+	count := func() int { return len(p.shown) }
+	listStyle := giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}
+	p.list = giode.VirtualList(count, 46, p.row, listStyle).ClickFocusesRow(false)
+	p.compactList = giode.VirtualList(count, 58, p.row, listStyle).ClickFocusesRow(false)
+	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 46)
+	p.phoneAnchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.compactList }, 58)
 	p.pause = widgets.NewToolButton("circle-stop", "Pause updates", func() { p.paused = !p.paused })
-	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("x"), "Terminate (SIGTERM)", func() { p.signal(p.target, ops.SignalTerm) }).
 		IconItem(theme.IconSource("skull"), "Kill (SIGKILL)", func() { p.signal(p.target, ops.SignalKill) }).
 		IconItem(theme.IconSource("rotate-cw"), "Reload (SIGHUP)", func() { p.signal(p.target, ops.SignalHup) }).
 		Separator().
 		IconItem(theme.IconSource("copy"), "Copy command line", func() { p.env.App.SetClipboard(p.target.Command) }).
-		IconItem(theme.IconSource("copy"), "Copy PID", func() { p.env.App.SetClipboard(fmt.Sprint(p.target.PID)) })
+		IconItem(theme.IconSource("copy"), "Copy PID", func() { p.env.App.SetClipboard(fmt.Sprint(p.target.PID)) }))
 	return p
 }
 
@@ -136,39 +144,51 @@ func (p *Page) visible() []ops.Process {
 }
 
 func (p *Page) row(i int) giode.Element {
-	v := p.visible()
-	if i >= len(v) {
+	if i >= len(p.shown) {
 		return giode.Box(giode.Styles{})
 	}
-	pid := v[i].PID
-	anchor, ok := p.anchors[pid]
-	if !ok {
-		anchor = new(image.Point)
-		p.anchors[pid] = anchor
+	openMenu := func(e giode.ClickEvent) {
+		pr, ok := p.clicked(i)
+		if !ok {
+			return
+		}
+		p.selected, p.target = pr.PID, pr
+		anchor := p.anchor
+		if giode.Compact() {
+			anchor = p.phoneAnchor
+		}
+		p.menu.OpenAt(anchor.At(i, e))
 	}
-	pr := p.rows.Get(pid, func() *giode.PressableElement {
+	pr := p.rows.Get(i, func() *giode.PressableElement {
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
-			cur, ok := p.lookup(pid)
-			if !ok {
+			if i >= len(p.shown) {
 				return giode.Box(giode.Styles{})
 			}
-			return processRow(cur, p.selected == pid, ps)
-		}).OnClick(func(giode.ClickEvent) { p.selected = pid }).
-			OnSecondaryClick(func(e giode.ClickEvent) {
-				if cur, ok := p.lookup(pid); ok {
-					p.selected, p.target = pid, cur
-					p.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-				}
-			})
+			cur := p.shown[i]
+			if giode.Compact() {
+				return compactProcessRow(cur, p.selected == cur.PID, ps)
+			}
+			return processRow(cur, p.selected == cur.PID, ps)
+		}).OnClick(func(giode.ClickEvent) {
+			if pr, ok := p.clicked(i); ok {
+				p.selected = pr.PID
+			}
+		}).OnSecondaryClick(openMenu).OnLongPress(openMenu)
 	})
-	pr.Label(v[i].Name)
-	return giode.Raw(func(gtx layout.Context) layout.Dimensions {
-		// Track after laying out: click handlers run inside Layout and
-		// need the exact position from the last frame.
-		dims := pr.Layout(gtx)
-		elements.TrackPosition(anchor)
-		return dims
-	})
+	pr.Label(p.shown[i].Name)
+	return pr
+}
+
+// clicked returns the process that was in row i when the user clicked
+// it: last frame's row, before this frame's re-sort.
+func (p *Page) clicked(i int) (ops.Process, bool) {
+	if i < len(p.seen) {
+		return p.seen[i], true
+	}
+	if i < len(p.shown) {
+		return p.shown[i], true
+	}
+	return ops.Process{}, false
 }
 
 func (p *Page) lookup(pid int32) (ops.Process, bool) {
@@ -213,10 +233,13 @@ func (p *Page) signal(pr ops.Process, sig ops.Signal) {
 	})
 }
 
-// Layout draws the list, reloading it periodically.
+// Layout draws the list, reloading it periodically. Updates pause while
+// a process's menu is open, so the list doesn't move under it.
 func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
+	p.seen = p.shown
+	p.shown = p.visible()
 	next := p.data.LoadedAt().Add(refreshEvery)
-	if !p.paused && !p.data.Loading() && time.Now().After(next) {
+	if !p.paused && !p.menu.Opened() && !p.data.Loading() && time.Now().After(next) {
 		p.load()
 	}
 	if p.paused {
@@ -226,18 +249,29 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 		p.pause.SetIcon("circle-stop")
 		p.pause.SetTooltip("Pause updates")
 	}
-	all, _ := p.data.Get()
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: giode.UniformInset(theme.Space4), Gap: theme.Space3},
-		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
-			giode.Box(giode.Styles{Width: 360}, p.filter),
-			giode.Box(giode.Styles{FlexGrow: 1}, giode.Text(fmt.Sprintf("%d processes · refreshed every %ds · right-click a process for actions", len(all), int(refreshEvery.Seconds())), theme.Caption)),
-			p.pause,
-		),
-		widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1},
-			p.header(),
-			giode.Divider(giode.Styles{Color: theme.SubtleBorder}),
-			giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1, Padding: giode.UniformInset(6)}, p.body()),
-		),
+	compact := giode.Compact()
+	toolbar := []giode.Element{giode.Box(giode.Styles{Width: 360}, p.filter)}
+	if compact {
+		toolbar = []giode.Element{giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.filter)}
+	} else {
+		all, _ := p.data.Get()
+		toolbar = append(toolbar, giode.Box(giode.Styles{FlexGrow: 1}, giode.Text(
+			fmt.Sprintf("%d processes · refreshed every %ds · right-click a process for actions", len(all), int(refreshEvery.Seconds())),
+			theme.Caption.With(giode.Styles{MaxLines: 1, TextOverflow: giode.TextOverflowEllipsis}))))
+	}
+	toolbar = append(toolbar, p.pause)
+	card := []giode.Element{}
+	if !compact {
+		card = append(card, p.header(), giode.Divider(giode.Styles{Color: theme.SubtleBorder}))
+	}
+	card = append(card, giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1, Padding: giode.UniformInset(6)}, p.body(compact)))
+	pad := giode.UniformInset(theme.Space4)
+	if compact {
+		pad = giode.UniformInset(theme.Space2)
+	}
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
+		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap}, toolbar...),
+		widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, card...),
 	), p.menu, widgets.RefreshAt(next)).Layout(gtx)
 }
 
@@ -249,12 +283,15 @@ func (p *Page) header() giode.Element {
 	return giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Wrap: giode.WrapNoWrap, Align: giode.AlignCenter, Padding: giode.Inset{Left: 22, Right: 22, Top: 10, Bottom: 10}}, cells...)
 }
 
-func (p *Page) body() giode.Element {
+func (p *Page) body(compact bool) giode.Element {
 	if _, ok := p.data.Get(); !ok {
 		if err := p.data.Err(); err != nil {
 			return widgets.EmptyState("circle-alert", "Couldn't list processes", err.Error())
 		}
 		return widgets.Loading("Listing processes…")
 	}
-	return p.list
+	if compact {
+		return p.phoneAnchor.Wrap(p.compactList)
+	}
+	return p.anchor.Wrap(p.list)
 }

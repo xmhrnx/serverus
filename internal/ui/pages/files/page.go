@@ -3,18 +3,15 @@ package files
 import (
 	"context"
 	"errors"
-	"image"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
-	"github.com/mehran9675/giode/elements"
 
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/transport"
@@ -43,18 +40,21 @@ type Page struct {
 	data        *async.Resource[listing]
 	downloadDir string
 
-	filter    *widgets.SearchField
-	crumbs    *Breadcrumb
-	headers   []*widgets.SortHeader
-	list      *giode.VirtualListElement
-	rows      *giode.KeyedCache[string, *giode.PressableElement]
-	rowAnchor map[string]*image.Point
-	menu      *menu.Menu
-	target    transport.FileInfo
+	filter      *widgets.SearchField
+	crumbs      *Breadcrumb
+	headers     []*widgets.SortHeader
+	list        *giode.VirtualListElement
+	phoneList   *giode.VirtualListElement
+	rows        *giode.KeyedCache[string, *giode.PressableElement]
+	anchor      *widgets.ListAnchor
+	phoneAnchor *widgets.ListAnchor
+	menu        *widgets.ContextMenu
+	target      transport.FileInfo
 
 	backBtn, upBtn, homeBtn, refreshBtn, hiddenBtn *widgets.ToolButton
 	newFolder, newFile                             *widgets.ToolButton
 	upload                                         *giode.ButtonElement
+	uploadIcon                                     *widgets.ToolButton
 
 	names  *NameDialog
 	chmod  *ChmodDialog
@@ -63,7 +63,7 @@ type Page struct {
 
 // New returns the file manager for s, starting in the home directory.
 func New(e *env.Env, s *session.Session) *Page {
-	p := &Page{env: e, session: s, rowAnchor: map[string]*image.Point{}}
+	p := &Page{env: e, session: s}
 	p.data = async.NewResource[listing](e.Invalidate)
 	p.filter = widgets.NewSearchField("Filter this folder", nil)
 	p.crumbs = NewBreadcrumb(func() string { return p.cwd }, p.navigate)
@@ -82,6 +82,15 @@ func New(e *env.Env, s *session.Session) *Page {
 				p.activate(v[i])
 			}
 		})
+	p.phoneList = giode.VirtualList(func() int { return len(p.visible()) }, 54, p.row, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).
+		ClickFocusesRow(false).
+		OnActivate(func(i int) {
+			if v := p.visible(); i < len(v) {
+				p.activate(v[i])
+			}
+		})
+	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 38)
+	p.phoneAnchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.phoneList }, 54)
 
 	p.backBtn = widgets.NewToolButton("arrow-left", "Back", p.goBack)
 	p.upBtn = widgets.NewToolButton("arrow-up", "Parent folder", func() { p.navigate(transport.Parent(p.cwd)) })
@@ -91,11 +100,12 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.newFolder = widgets.NewToolButton("folder-plus", "New folder", p.askNewFolder)
 	p.newFile = widgets.NewToolButton("file-plus", "New file", p.askNewFile)
 	p.upload = widgets.Button(widgets.Primary, "Upload", "upload").OnClick(p.pickUploads)
+	p.uploadIcon = widgets.NewToolButton("upload", "Upload", p.pickUploads).Tint(theme.Primary)
 
 	p.names = NewNameDialog()
 	p.chmod = NewChmodDialog()
 	p.editor = NewEditorDialog(e)
-	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("folder-open"), "Open", func() { p.activate(p.target) }).
 		IconItem(theme.IconSource("pencil"), "Edit", func() { p.edit(p.target) }).
 		IconItem(theme.IconSource("download"), "Download", func() { p.download(p.target, false) }).
@@ -105,7 +115,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("lock"), "Permissions…", func() { p.askChmod(p.target) }).
 		IconItem(theme.IconSource("copy"), "Copy path", func() { p.env.App.SetClipboard(p.pathOf(p.target)) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Delete", func() { p.confirmDelete(p.target) })
+		IconItem(theme.IconSource("trash-2"), "Delete", func() { p.confirmDelete(p.target) }))
 	return p
 }
 
@@ -220,18 +230,26 @@ func (p *Page) row(i int) giode.Element {
 		return giode.Box(giode.Styles{})
 	}
 	f := v[i]
-	anchor, ok := p.rowAnchor[f.Name]
-	if !ok {
-		anchor = new(image.Point)
-		p.rowAnchor[f.Name] = anchor
-	}
 	key := p.cwd + "/" + f.Name
 	pr := p.rows.Get(key, func() *giode.PressableElement {
 		name := f.Name
+		openMenu := func(e giode.ClickEvent) {
+			if cur, ok := p.lookup(name); ok {
+				p.selected, p.target = name, cur
+				anchor := p.anchor
+				if giode.Compact() {
+					anchor = p.phoneAnchor
+				}
+				p.menu.OpenAt(anchor.At(p.indexOf(name), e))
+			}
+		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
 			cur, ok := p.lookup(name)
 			if !ok {
 				return giode.Box(giode.Styles{})
+			}
+			if giode.Compact() {
+				return compactFileRow(cur, p.selected == name, ps)
 			}
 			return fileRow(cur, p.selected == name, ps)
 		}).OnClick(func(e giode.ClickEvent) {
@@ -241,21 +259,16 @@ func (p *Page) row(i int) giode.Element {
 					p.activate(cur)
 				}
 			}
-		}).OnSecondaryClick(func(e giode.ClickEvent) {
-			if cur, ok := p.lookup(name); ok {
-				p.selected, p.target = name, cur
-				p.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-			}
-		})
+		}).OnSecondaryClick(openMenu).OnLongPress(openMenu)
 	})
 	pr.Label(f.Name)
-	return giode.Raw(func(gtx layout.Context) layout.Dimensions {
-		// Track after laying out: click handlers run inside Layout and
-		// need the exact position from the last frame.
-		dims := pr.Layout(gtx)
-		elements.TrackPosition(anchor)
-		return dims
-	})
+	return pr
+}
+
+// indexOf is the row a file is shown in. Rows are keyed by name, and a
+// file's row moves as the listing is filtered and sorted.
+func (p *Page) indexOf(name string) int {
+	return slices.IndexFunc(p.visible(), func(f transport.FileInfo) bool { return f.Name == name })
 }
 
 func (p *Page) lookup(name string) (transport.FileInfo, bool) {
@@ -468,27 +481,48 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 		p.hiddenBtn.SetIcon("eye-off")
 		p.hiddenBtn.SetTooltip("Show hidden files")
 	}
+	pad := giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space2)
+	}
 	return widgets.WithOverlays(
-		giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: giode.UniformInset(theme.Space4), Gap: theme.Space3},
+		giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
 			p.toolbar(),
-			widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1},
-				p.header(),
-				giode.Divider(giode.Styles{Color: theme.SubtleBorder}),
-				giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1, Padding: giode.UniformInset(6)}, p.body()),
-				p.footer(),
-			),
+			widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.card()...),
 		),
 		p.menu, p.names, p.chmod, p.editor,
 	).Layout(gtx)
 }
 
 func (p *Page) toolbar() giode.Element {
+	if giode.Compact() {
+		return giode.Stack(giode.Styles{Width: -1, Gap: theme.Space2},
+			giode.Row(giode.Styles{Width: -1, Gap: 2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
+				p.backBtn, p.upBtn, p.homeBtn, p.refreshBtn,
+				giode.Box(giode.Styles{FlexGrow: 1, Padding: giode.SymmetricInset(theme.Space1, 0), Overflow: giode.OverflowHidden}, p.crumbs),
+			),
+			giode.Row(giode.Styles{Width: -1, Gap: 2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
+				giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.filter),
+				p.hiddenBtn, p.newFolder, p.newFile, p.uploadIcon,
+			),
+		)
+	}
 	return giode.Row(giode.Styles{Width: -1, Gap: theme.Space2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
 		p.backBtn, p.upBtn, p.homeBtn, p.refreshBtn,
 		giode.Box(giode.Styles{FlexGrow: 1, Padding: giode.SymmetricInset(theme.Space2, 0), Overflow: giode.OverflowHidden}, p.crumbs),
 		giode.Box(giode.Styles{Width: 220}, p.filter),
 		p.hiddenBtn, p.newFolder, p.newFile, p.upload,
 	)
+}
+
+// card is the listing's content: column headers (not on phones), the
+// rows and the summary.
+func (p *Page) card() []giode.Element {
+	body := giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1, Padding: giode.UniformInset(6)}, p.body())
+	if giode.Compact() {
+		return []giode.Element{body, p.footer()}
+	}
+	return []giode.Element{p.header(), giode.Divider(giode.Styles{Color: theme.SubtleBorder}), body, p.footer()}
 }
 
 func (p *Page) header() giode.Element {
@@ -514,7 +548,10 @@ func (p *Page) body() giode.Element {
 		}
 		return widgets.EmptyState("folder-open", "This folder is empty", "Drop files on the window or use Upload to add some.", p.upload)
 	}
-	return p.list
+	if giode.Compact() {
+		return p.phoneAnchor.Wrap(p.phoneList)
+	}
+	return p.anchor.Wrap(p.list)
 }
 
 func (p *Page) footer() giode.Element {

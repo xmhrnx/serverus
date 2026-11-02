@@ -5,6 +5,7 @@ package overview
 
 import (
 	"errors"
+	"slices"
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
@@ -68,11 +69,21 @@ func (p *Page) content() giode.Element {
 		tiles = append(tiles, networkTile(snap, total))
 	}
 
-	return giode.Stack(giode.Styles{Gap: theme.Space4, Padding: giode.UniformInset(theme.Space6), Width: -1},
+	pad := giode.UniformInset(theme.Space6)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space3)
+	}
+	sections := []giode.Element{
 		SystemHeader(snap, p.session.Latency()),
 		widgets.Grid(230, theme.Space4, tiles...),
 		widgets.Grid(420, theme.Space4, UsageChart(charts), ThroughputChart(snap, charts)),
-		widgets.Grid(420, theme.Space4, CoresCard(snap), SensorsCard(snap)),
+		CoresCard(snap),
 		widgets.Grid(420, theme.Space4, DisksCard(snap), NetworkCard(snap)),
-	)
+	}
+	if len(snap.Sensors) > 0 {
+		// Next to the cores; machines without sensors (most virtual
+		// ones) don't get an empty card.
+		sections = slices.Insert(sections, 4, SensorsCard(snap))
+	}
+	return giode.Stack(giode.Styles{Gap: theme.Space4, Padding: pad, Width: -1}, sections...)
 }

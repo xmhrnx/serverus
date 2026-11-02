@@ -6,10 +6,12 @@ import (
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/components/menu"
+	"github.com/mehran9675/giode/components/scroll"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/ui/env"
+	term "github.com/xmhrnx/serverus/internal/ui/terminal"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
@@ -31,6 +33,8 @@ type Page struct {
 	pasteBtn *widgets.ToolButton
 	clearBtn *widgets.ToolButton
 
+	tabScroll      *scroll.Scroll
+	keyBar         *KeyBar
 	snippets       *menu.Menu
 	snippetTrigger giode.Element
 	snippetIDs     []string
@@ -43,6 +47,13 @@ type Page struct {
 func New(e *env.Env, s *session.Session) *Page {
 	p := &Page{env: e, session: s}
 	p.chips = giode.NewKeyedCache[int, *giode.PressableElement]()
+	p.tabScroll = giode.Scroll(p.tabRow, giode.Styles{ScrollBar: giode.ScrollBar{Hidden: true}}).Axis(giode.Horizontal)
+	p.keyBar = NewKeyBar(func() *term.View {
+		if t := p.current(); t != nil {
+			return t.view
+		}
+		return nil
+	})
 	p.closers = giode.NewKeyedCache[int, *widgets.ToolButton]()
 	p.newTab = widgets.NewToolButton("plus", "New tab", p.addTab)
 	p.copyBtn = widgets.NewToolButton("copy", "Copy selection (Ctrl+Shift+C)", func() {
@@ -157,25 +168,42 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 		p.addTab()
 	}
 	p.syncSnippets()
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: giode.UniformInset(theme.Space4), Gap: theme.Space3},
+	pad := giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space2)
+	}
+	children := []giode.Element{
 		p.strip(),
 		giode.Box(giode.Styles{
 			Width: -1, FlexGrow: 1, Height: -1, BorderRadius: theme.RadiusLg, Overflow: giode.OverflowHidden,
 			BorderColor: theme.SubtleBorder, BorderWidth: 1, Background: "#0c0f15",
 		}, p.body()),
-	), p.snippets).Layout(gtx)
+	}
+	if giode.TouchInput() || giode.Compact() {
+		children = append(children, p.keyBar)
+	}
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space2}, children...), p.snippets).Layout(gtx)
 }
 
+// strip is the tab row and the tools; the tabs scroll sideways when
+// there are more than fit.
 func (p *Page) strip() giode.Element {
+	return giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Gap: theme.Space2, Wrap: giode.WrapNoWrap},
+		giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.tabScroll),
+		p.snippetTrigger, p.copyBtn, p.pasteBtn, p.clearBtn,
+	)
+}
+
+func (p *Page) tabRow() giode.Element {
 	chips := make([]giode.Element, 0, len(p.tabs)+1)
-	for i, t := range p.tabs {
-		i, t := i, t
+	for _, t := range p.tabs {
+		t := t
 		closer := p.closers.Get(t.id, func() *widgets.ToolButton {
 			return widgets.NewToolButton("x", "Close tab", func() { giode.AfterLayout(func() { p.closeTab(t.id) }) })
 		})
 		chip := p.chips.Get(t.id, func() *giode.PressableElement {
 			return giode.Pressable(func(s giode.PressState) giode.Element {
-				return tabChip(t.title(), p.active == i || p.current() == t, s.Hovered, t.ended(), closer)
+				return tabChip(t.title(), p.current() == t, s.Hovered, t.ended(), closer)
 			}).Label(t.title()).OnClick(func(giode.ClickEvent) {
 				if j := slices.Index(p.tabs, t); j >= 0 {
 					p.active = j
@@ -186,10 +214,7 @@ func (p *Page) strip() giode.Element {
 		chips = append(chips, chip)
 	}
 	chips = append(chips, p.newTab)
-	return giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Gap: theme.Space2, Wrap: giode.WrapNoWrap},
-		giode.Row(giode.Styles{FlexGrow: 1, Gap: 6, Align: giode.AlignCenter}, chips...),
-		p.snippetTrigger, p.copyBtn, p.pasteBtn, p.clearBtn,
-	)
+	return giode.Row(giode.Styles{Gap: 6, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap}, chips...)
 }
 
 func (p *Page) body() giode.Element {

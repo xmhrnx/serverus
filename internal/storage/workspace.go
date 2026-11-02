@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"runtime"
+	"github.com/xmhrnx/serverus/internal/platform"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 )
@@ -22,7 +22,7 @@ const workspaceVersion = 1
 // few useful snippets, so the app isn't empty on first launch.
 func newWorkspace() Workspace {
 	var servers []domain.Server
-	if runtime.GOOS != "android" && runtime.GOOS != "ios" {
+	if platform.Desktop {
 		local := domain.Server{
 			ID:       domain.NewID(),
 			Name:     "This computer",

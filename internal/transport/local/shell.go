@@ -3,7 +3,6 @@ package local
 import (
 	"context"
 	"os"
-	"runtime"
 
 	"github.com/aymanbagabas/go-pty"
 
@@ -43,19 +42,6 @@ func (c *Conn) OpenShell(ctx context.Context, cols, rows int) (transport.Shell, 
 		p.Close() // ends the reader once the shell exits
 	}()
 	return s, nil
-}
-
-func userShell() (string, []string) {
-	if runtime.GOOS == "windows" {
-		if ps, err := lookPath("pwsh.exe"); err == nil {
-			return ps, []string{"-NoLogo"}
-		}
-		return "powershell.exe", []string{"-NoLogo"}
-	}
-	if sh := os.Getenv("SHELL"); sh != "" {
-		return sh, []string{"-l"}
-	}
-	return "/bin/sh", []string{"-l"}
 }
 
 func (s *shell) Read(p []byte) (int, error)  { return s.pty.Read(p) }

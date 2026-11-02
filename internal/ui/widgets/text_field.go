@@ -22,8 +22,3 @@ var fieldStyle = giode.Styles{
 func TextField(placeholder string) *input.Input {
 	return giode.Input.Text(placeholder, fieldStyle)
 }
-
-// CodeField returns a monospaced text field, for commands and paths.
-func CodeField(placeholder string) *input.Input {
-	return giode.Input.Text(placeholder, fieldStyle.With(giode.Styles{FontFamily: theme.Mono, FontSize: theme.TextSm}))
-}

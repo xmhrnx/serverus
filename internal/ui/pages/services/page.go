@@ -3,16 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"image"
+	"slices"
 	"strings"
 	"time"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
 	"github.com/mehran9675/giode/components/segmented"
-	"github.com/mehran9675/giode/elements"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -44,8 +41,8 @@ type Page struct {
 	rows     *giode.KeyedCache[string, *giode.PressableElement]
 	restarts *giode.KeyedCache[string, *widgets.ToolButton]
 	logsBtns *giode.KeyedCache[string, *widgets.ToolButton]
-	anchors  map[string]*image.Point
-	menu     *menu.Menu
+	anchor   *widgets.ListAnchor
+	menu     *widgets.ContextMenu
 	target   ops.Service
 	refresh  *widgets.ToolButton
 	output   *dialogs.OutputDialog
@@ -53,7 +50,7 @@ type Page struct {
 
 // New returns the services page for s.
 func New(e *env.Env, s *session.Session) *Page {
-	p := &Page{env: e, session: s, anchors: map[string]*image.Point{}}
+	p := &Page{env: e, session: s}
 	p.data = async.NewResource[[]ops.Service](e.Invalidate)
 	p.filter = widgets.NewSearchField("Filter services", nil)
 	p.show = giode.Input.Segmented("All", "Running", "Failed", "Stopped").Styles(giode.Styles{FontSize: theme.TextSm})
@@ -62,10 +59,11 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.logsBtns = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	p.list = giode.VirtualList(func() int { return len(p.visible()) }, 52, p.row,
 		giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).ClickFocusesRow(false)
+	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 52)
 	p.refresh = widgets.NewToolButton("refresh-cw", "Refresh", p.load)
 	p.output = dialogs.NewOutputDialog(e)
 	act := func(a ops.ServiceAction) func() { return func() { p.do(p.target, a) } }
-	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("play"), "Start", act(ops.ServiceStart)).
 		IconItem(theme.IconSource("square"), "Stop", act(ops.ServiceStop)).
 		IconItem(theme.IconSource("rotate-cw"), "Restart", act(ops.ServiceRestart)).
@@ -75,7 +73,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("circle-stop"), "Don't start at boot", act(ops.ServiceDisable)).
 		Separator().
 		IconItem(theme.IconSource("scroll-text"), "Logs", func() { p.showLogs(p.target) }).
-		IconItem(theme.IconSource("info"), "Status", func() { p.showStatus(p.target) })
+		IconItem(theme.IconSource("info"), "Status", func() { p.showStatus(p.target) }))
 	return p
 }
 
@@ -138,11 +136,6 @@ func (p *Page) row(i int) giode.Element {
 		return giode.Box(giode.Styles{})
 	}
 	unit := v[i].Unit
-	anchor, ok := p.anchors[unit]
-	if !ok {
-		anchor = new(image.Point)
-		p.anchors[unit] = anchor
-	}
 	restart := p.restarts.Get(unit, func() *widgets.ToolButton {
 		return widgets.NewToolButton("rotate-cw", "Restart", func() {
 			if s, ok := p.lookup(unit); ok {
@@ -158,6 +151,12 @@ func (p *Page) row(i int) giode.Element {
 		})
 	})
 	pr := p.rows.Get(unit, func() *giode.PressableElement {
+		openMenu := func(e giode.ClickEvent) {
+			if s, ok := p.lookup(unit); ok {
+				p.selected, p.target = unit, s
+				p.menu.OpenAt(p.anchor.At(slices.IndexFunc(p.visible(), func(x ops.Service) bool { return x.Unit == unit }), e))
+			}
+		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
 			s, ok := p.lookup(unit)
 			if !ok {
@@ -171,21 +170,10 @@ func (p *Page) row(i int) giode.Element {
 					p.showStatus(s)
 				}
 			}
-		}).OnSecondaryClick(func(e giode.ClickEvent) {
-			if s, ok := p.lookup(unit); ok {
-				p.selected, p.target = unit, s
-				p.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-			}
-		})
+		}).OnSecondaryClick(openMenu).OnLongPress(openMenu)
 	})
 	pr.Label(unit)
-	return giode.Raw(func(gtx layout.Context) layout.Dimensions {
-		// Track after laying out: click handlers run inside Layout and
-		// need the exact position from the last frame.
-		dims := pr.Layout(gtx)
-		elements.TrackPosition(anchor)
-		return dims
-	})
+	return pr
 }
 
 func (p *Page) do(s ops.Service, a ops.ServiceAction) {
@@ -256,13 +244,25 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 	if failed > 0 {
 		summary = append(summary, widgets.Pill(fmt.Sprintf("%d failed", failed), theme.Danger))
 	}
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: giode.UniformInset(theme.Space4), Gap: theme.Space3},
-		giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
+	var toolbar giode.Element
+	pad := giode.UniformInset(theme.Space4)
+	if giode.Compact() {
+		pad = giode.UniformInset(theme.Space2)
+		toolbar = giode.Stack(giode.Styles{Width: -1, Gap: theme.Space2},
+			giode.Row(giode.Styles{Width: -1, Gap: theme.Space2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
+				giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.filter), p.refresh),
+			p.show,
+		)
+	} else {
+		toolbar = giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
 			giode.Box(giode.Styles{Width: 300}, p.filter),
 			p.show,
 			giode.Row(giode.Styles{FlexGrow: 1, Gap: theme.Space2, Justify: giode.JustifyEnd, Align: giode.AlignCenter}, summary...),
 			p.refresh,
-		),
+		)
+	}
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
+		toolbar,
 		widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1, Padding: giode.UniformInset(6)}, p.body()),
 	), p.menu, p.output).Layout(gtx)
 }
@@ -280,5 +280,5 @@ func (p *Page) body() giode.Element {
 	if len(p.visible()) == 0 {
 		return widgets.EmptyState("layers", "No services match", "Try another filter.")
 	}
-	return p.list
+	return p.anchor.Wrap(p.list)
 }

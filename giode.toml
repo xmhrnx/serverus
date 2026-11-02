@@ -15,6 +15,10 @@ website = ""
 
 [android]
 min_sdk = 21
+# Adaptive icon layers, drawn by scripts/make_icon.py. Without them the
+# launcher shows white where app.icon's rounded corners are transparent.
+icon_foreground = "assets/android-foreground.png"
+icon_background = "assets/android-background.png"
 permissions = ["network"]
 # keep_alive = true          # lets App.KeepAlive keep work running in the background
 # keystore = "release.keystore"   # created by giode keystore; signs giode build -release

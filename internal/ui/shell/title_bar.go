@@ -1,7 +1,7 @@
 package shell
 
 import (
-	"runtime"
+	"github.com/xmhrnx/serverus/internal/platform"
 
 	"github.com/mehran9675/giode"
 	"github.com/mehran9675/giode/components/titlebar"
@@ -16,7 +16,7 @@ func newTitleBar(app *giode.App, trailing ...giode.Element) *titlebar.TitleBar {
 		Background: theme.Sidebar, Color: theme.Text, Height: 40, FontSize: theme.TextSm,
 		FontWeight: giode.FontWeightSemiBold, BorderWidth: 1, BorderColor: theme.SubtleBorder,
 	}).Icon(theme.Logo(22)).Trailing(trailing...)
-	if runtime.GOOS == "darwin" {
+	if platform.Mac {
 		bar.Variant(giode.TitleBarMac)
 	}
 	return bar

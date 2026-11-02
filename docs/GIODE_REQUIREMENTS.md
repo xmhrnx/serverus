@@ -75,25 +75,33 @@ search, open settings, refresh the current page, and Mod+1…9 to switch pages.
 
 ---
 
-## 3. Opening a context menu at the pointer from a `Pressable`
+## 3. `Menu.OpenAt` opens offset by the containers around the menu
 
-**Area:** `elements.Pressable`, `components/menu`
-**Kind:** API
+**Area:** `components/menu`, `elements` portals
+**Kind:** bug
 
 ### What happens
 
-`ClickEvent.Position` is relative to the pressable, while `Menu.OpenAt` takes window
-coordinates. To open a per-row menu where the user right-clicked, every list row has to
-track its window position with `elements.TrackPosition` (and call it *after* laying the
-row out, because the click handler runs inside `Layout` and must read last frame's exact
-value). It works, but every list in the app repeats it.
+`Menu.OpenAt(pos)` takes a window position, and the menu registers its panel as a portal
+at that position. When the menu is laid out inside a `Row`, `Stack` or `Scroll` that
+places its children after laying them out, `ChildTracker.Place` then moves the portal's
+anchor by the child's offset, as it does for portals anchored at
+`AbsolutePosition()`. The panel opens that far from where it was asked to: 40px low in
+Serverus's sidebar (under the title bar), about 170px low on a page under a header and
+tabs.
+
+### What Serverus does now
+
+`widgets.ContextMenu` wraps each menu, records `AbsolutePosition()` before laying it out
+and the tracked position after, and subtracts the difference in `OpenAt`.
 
 ### What's needed
 
-Either:
-
-- `ClickEvent.WindowPosition` (pixels, window-relative), or
-- `Menu.OpenAtPointer()`, using the position of the last pointer event the window saw.
+`OpenAt` positions that stay window-absolute wherever the menu is laid out (register the
+panel as an overlay portal, or convert the position to the container-relative one
+`Place` expects). Related, and still useful: `ClickEvent.WindowPosition` or
+`Menu.OpenAtPointer()`, so a list doesn't need to track positions to open a row's menu
+where it was clicked.
 
 ---
 
@@ -187,13 +195,27 @@ press/release pair.
 
 ---
 
+## 9. Cross-axis stretch (`align-items: stretch`)
+
+**Area:** `styles/properties`, `elements` flex layout
+**Kind:** missing feature
+
+
+`Align` has start, center and end; `properties/align.go` notes CSS's default `stretch`
+isn't supported. Cards side by side in a row can't be made equally tall, so a dashboard
+row of two cards with different content has a ragged bottom edge. Serverus avoids
+pairing cards whose heights differ much (cores and temperatures now take a row each).
+`AlignStretch`, on a `Row`/`Stack` or per child, would fix it.
+
+---
+
 ## The giode CLI
 
 `giode new`, `giode build linux` and the Gio patches (needed for `ui_pointer`/`ui_key` and
 file drops on Linux) worked as documented. Windows cross-compiles with plain `go build`
 (`GOOS=windows`). Releases showed three gaps:
 
-### 9. Four-part release tags in `giode ci`
+### 10. Four-part release tags in `giode ci`
 
 Serverus versions releases as `major.minor.patch.versionCode` (`1.0.0.0`), the format
 gogio itself uses for Android. `giode ci` sets `GIODE_VERSION` to the whole tag and
@@ -209,19 +231,19 @@ It must not be regenerated with `giode ci -f`.
 for `GIODE_VERSION`/`app.version` to accept a four-part version, taking the fourth part as
 the build.
 
-### 10. A build number of 0 is silently raised to 1
+### 11. A build number of 0 is silently raised to 1
 
 `config.Load` turns `app.build = 0` (and `GIODE_BUILD=0`) into 1, so `1.0.0.0` and
 `1.0.0.1` produce the same Android `versionCode`, and the second can't be uploaded to
 Google Play. Either reject 0 with an error saying the build must be at least 1, or
 document it.
 
-### 11. `giode ci` with `trigger = "release"` adds `workflow_dispatch`
+### 12. `giode ci` with `trigger = "release"` adds `workflow_dispatch`
 
 The generated workflow also runs by hand from the Actions tab. For a release-only
 pipeline it would help to leave it out (or make it a setting).
 
-### 12. `giode doctor` and `giode ci` miss bundletool
+### 13. `giode doctor` and `giode ci` miss bundletool
 
 `giode build aab` needs `bundletool*.jar` in the SDK's latest build-tools folder. The
 GitHub Ubuntu runner has the SDK, NDK and JDK but not bundletool, so the `giode ci`

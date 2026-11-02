@@ -1,7 +1,8 @@
 package shell
 
 import (
-	"runtime"
+	"github.com/xmhrnx/serverus/internal/platform"
+
 	"time"
 
 	"gioui.org/layout"
@@ -81,7 +82,7 @@ func NewRoot(e *env.Env, cfg Config) *Root {
 	r.navBtn = widgets.NewToolButton("list", "Servers", func() { r.navOn = !r.navOn })
 	r.transBtn = widgets.NewToolButton("arrow-up-down", "Transfers", func() { r.drawerOn = !r.drawerOn })
 	r.themeBtn = widgets.NewToolButton("sun", "Switch theme", r.toggleTheme)
-	if runtime.GOOS != "android" && runtime.GOOS != "ios" {
+	if platform.Desktop {
 		r.bar = newTitleBar(e.App, r.transBtn, r.themeBtn)
 	}
 	if servers := e.Repo.Servers(); len(servers) > 0 {

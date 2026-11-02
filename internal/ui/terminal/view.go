@@ -1,8 +1,9 @@
 package terminal
 
 import (
+	"github.com/xmhrnx/serverus/internal/platform"
+
 	"image"
-	"runtime"
 
 	"gioui.org/font"
 	"gioui.org/io/event"
@@ -36,6 +37,8 @@ type View struct {
 	selecting  bool
 	focused    bool
 	wantFocus  bool
+	ctrlLatch  bool
+	touchY     float32 // last finger position while a touch scrolls
 	lastFrame  frame
 	origin     image.Point
 }
@@ -97,10 +100,12 @@ func (v *View) Layout(gtx layout.Context) layout.Dimensions {
 	fillRect(gtx.Ops, image.Rectangle{Max: size}, v.screen.palette.Background)
 	area := clip.Rect{Max: size}.Push(gtx.Ops)
 	event.Op(gtx.Ops, v)
-	key.InputHintOp{Tag: v, Hint: key.HintAny}.Add(gtx.Ops)
+	// The password hint turns off autocorrect and capitalization, which
+	// would rewrite commands as they're typed on an on-screen keyboard.
+	key.InputHintOp{Tag: v, Hint: key.HintPassword}.Add(gtx.Ops)
 	pointer.CursorText.Add(gtx.Ops)
 	if v.wantFocus {
-		gtx.Execute(key.FocusCmd{Tag: v})
+		v.focus(gtx)
 		v.wantFocus = false
 	}
 
@@ -136,6 +141,7 @@ func (v *View) handleEvents(gtx layout.Context) {
 			key.Filter{Focus: v, Optional: mods},
 			key.Filter{Focus: v, Name: key.NameTab, Optional: mods},
 			key.Filter{Focus: v, Name: key.NameEscape, Optional: mods},
+			key.Filter{Focus: v, Name: key.NameDeleteBackward, Optional: mods},
 			pointer.Filter{Target: v, Kinds: pointer.Press | pointer.Drag | pointer.Release | pointer.Scroll, ScrollY: pointer.ScrollRange{Min: -1 << 20, Max: 1 << 20}},
 		)
 		if !ok {
@@ -144,13 +150,17 @@ func (v *View) handleEvents(gtx layout.Context) {
 		switch e := ev.(type) {
 		case key.FocusEvent:
 			v.focused = e.Focus
+			if e.Focus {
+				v.resetIME(gtx)
+			}
+		case key.SnippetEvent:
+			v.resetIME(gtx)
 		case key.Event:
 			if e.State == key.Press {
 				v.handleKey(e)
 			}
 		case key.EditEvent:
-			v.typed()
-			v.screen.SendText(e.Text)
+			v.handleEdit(gtx, e)
 		case pointer.Event:
 			v.handlePointer(gtx, e)
 		}
@@ -166,7 +176,7 @@ func (v *View) typed() {
 
 func (v *View) handleKey(e key.Event) {
 	shortcut := e.Modifiers.Contain(key.ModCtrl | key.ModShift)
-	if runtime.GOOS == "darwin" {
+	if platform.Mac {
 		shortcut = e.Modifiers.Contain(key.ModCommand)
 	}
 	switch {
@@ -202,11 +212,22 @@ func (v *View) cellAt(pos image.Point) point {
 	return point{line: v.lastFrame.top + row, col: col}
 }
 
+// focus takes the keyboard and, on touch screens, shows the on-screen
+// keyboard.
+func (v *View) focus(gtx layout.Context) {
+	gtx.Execute(key.FocusCmd{Tag: v})
+	gtx.Execute(key.SoftKeyboardCmd{Show: true})
+}
+
 func (v *View) handlePointer(gtx layout.Context, e pointer.Event) {
+	if e.Source == pointer.Touch && e.Kind != pointer.Scroll {
+		v.handleTouch(gtx, e)
+		return
+	}
 	pos := e.Position.Round()
 	switch e.Kind {
 	case pointer.Press:
-		gtx.Execute(key.FocusCmd{Tag: v})
+		v.focus(gtx)
 		if e.Buttons.Contain(pointer.ButtonSecondary) {
 			// Right-click copies a selection, or pastes, like PuTTY and
 			// Windows Terminal.
@@ -235,21 +256,62 @@ func (v *View) handlePointer(gtx layout.Context, e pointer.Event) {
 			return
 		}
 		v.scrollRem -= float32(lines * v.metrics.height)
-		if v.screen.AltScreen() {
-			// Full-screen programs get arrow keys, as xterm's
-			// alternateScroll mode does.
-			code := uv.KeyDown
-			if lines < 0 {
-				code = uv.KeyUp
-			}
-			for i := 0; i < abs(lines)*3; i++ {
-				v.screen.SendKey(uv.KeyPressEvent{Code: code})
-			}
-			return
-		}
-		v.scrollLines(-lines * 3)
+		// Full-screen programs get arrow keys, as xterm's
+		// alternateScroll mode does.
+		v.scroll(-lines * 3)
 	}
 }
+
+// handleTouch: a tap focuses the terminal and shows the keyboard, and a
+// drag scrolls, as touch users expect. Selecting with a finger isn't
+// supported; the key bar has Paste.
+func (v *View) handleTouch(gtx layout.Context, e pointer.Event) {
+	switch e.Kind {
+	case pointer.Press:
+		v.touchY = e.Position.Y
+		v.focus(gtx)
+	case pointer.Drag:
+		dy := e.Position.Y - v.touchY
+		lines := int(dy / float32(v.metrics.height))
+		if lines != 0 {
+			v.touchY += float32(lines * v.metrics.height)
+			v.scroll(lines)
+		}
+	}
+}
+
+// scroll moves through the history by lines (positive shows older
+// lines), or sends arrow keys to a full-screen program.
+func (v *View) scroll(lines int) {
+	if v.screen.AltScreen() {
+		code := uv.KeyUp
+		if lines < 0 {
+			code = uv.KeyDown
+		}
+		for i := 0; i < abs(lines); i++ {
+			v.screen.SendKey(uv.KeyPressEvent{Code: code})
+		}
+		return
+	}
+	v.scrollLines(lines)
+}
+
+// SendKey sends a key from outside the keyboard: the touch key bar.
+func (v *View) SendKey(code rune, mod uv.KeyMod) {
+	v.typed()
+	v.screen.SendKey(uv.KeyPressEvent{Code: code, Mod: mod})
+	v.wantFocus = true
+}
+
+// SetCtrlLatch makes the next character typed a Ctrl combination, for
+// keyboards without a Ctrl key.
+func (v *View) SetCtrlLatch(on bool) {
+	v.ctrlLatch = on
+	v.wantFocus = true
+}
+
+// CtrlLatched reports whether the next character gets Ctrl.
+func (v *View) CtrlLatched() bool { return v.ctrlLatch }
 
 func abs(n int) int {
 	if n < 0 {

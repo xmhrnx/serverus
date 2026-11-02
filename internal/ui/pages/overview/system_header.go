@@ -16,15 +16,15 @@ import (
 // chips with uptime, load, processes and the CPU.
 func SystemHeader(s monitor.Snapshot, latency time.Duration) giode.Element {
 	chips := []giode.Element{
-		chip("clock", "Up "+format.Duration(s.System.Uptime)),
-		chip("activity", fmt.Sprintf("Load %.2f · %.2f · %.2f", s.Load[0], s.Load[1], s.Load[2])),
-		chip("list", fmt.Sprintf("%d processes", s.Processes)),
+		infoChip("clock", "Up "+format.Duration(s.System.Uptime)),
+		infoChip("activity", fmt.Sprintf("Load %.2f · %.2f · %.2f", s.Load[0], s.Load[1], s.Load[2])),
+		infoChip("list", fmt.Sprintf("%d processes", s.Processes)),
 	}
 	if s.System.CPUModel != "" {
-		chips = append(chips, chip("cpu", fmt.Sprintf("%d × %s", s.System.Cores, s.System.CPUModel)))
+		chips = append(chips, infoChip("cpu", fmt.Sprintf("%d × %s", s.System.Cores, s.System.CPUModel)))
 	}
 	if latency > 0 {
-		chips = append(chips, chip("zap", format.Latency(latency)+" round trip"))
+		chips = append(chips, infoChip("zap", format.Latency(latency)+" round trip"))
 	}
 	sub := s.System.OS
 	if s.System.Kernel != "" {
@@ -41,16 +41,5 @@ func SystemHeader(s monitor.Snapshot, latency time.Duration) giode.Element {
 			),
 		),
 		giode.Row(giode.Styles{Gap: theme.Space2, Width: -1}, chips...),
-	)
-}
-
-func chip(icon, label string) giode.Element {
-	return giode.Row(giode.Styles{
-		Gap: 6, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap,
-		Padding: giode.SymmetricInset(10, 5), BorderRadius: theme.RadiusFull,
-		Background: theme.Sunken, BorderColor: theme.SubtleBorder, BorderWidth: 1,
-	},
-		theme.Icon(icon, 13, theme.Muted),
-		giode.Text(label, giode.Styles{Color: theme.Text, FontSize: theme.TextSm}),
 	)
 }

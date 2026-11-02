@@ -49,12 +49,13 @@ func containerRow(c ops.Container, selected bool, ps giode.PressState, actions g
 		giode.Stack(giode.Styles{FlexGrow: 2, Gap: 2, Width: -1},
 			giode.Text(c.Name, giode.Styles{Color: theme.Text, FontSize: theme.TextBase, FontWeight: giode.FontWeightMedium, TextOverflow: giode.TextOverflowEllipsis}),
 			giode.Text(c.Image, theme.Caption.With(giode.Styles{FontFamily: theme.Mono, TextOverflow: giode.TextOverflowEllipsis})),
+			giode.Text(c.Status, giode.Styles{Color: stateTone(c), FontSize: theme.TextXS, Display: widgets.ShownOnPhones(), TextOverflow: giode.TextOverflowEllipsis}),
 		),
-		giode.Stack(giode.Styles{FlexGrow: 2, Gap: 2, Width: -1},
+		giode.Stack(giode.Styles{FlexGrow: 2, Gap: 2, Width: -1, Display: widgets.HiddenOnPhones()},
 			giode.Text(c.Status, giode.Styles{Color: stateTone(c), FontSize: theme.TextSm, TextOverflow: giode.TextOverflowEllipsis}),
 			giode.Text(ports, theme.Caption.With(giode.Styles{FontSize: theme.TextXS, FontFamily: theme.Mono, TextOverflow: giode.TextOverflowEllipsis})),
 		),
-		giode.Box(giode.Styles{Width: 200}, giode.Text(usage, giode.Styles{Color: theme.Muted, FontSize: theme.TextXS, FontFamily: theme.Mono, TextOverflow: giode.TextOverflowEllipsis})),
+		giode.Box(giode.Styles{Width: 200, Display: widgets.HiddenOnPhones()}, giode.Text(usage, giode.Styles{Color: theme.Muted, FontSize: theme.TextXS, FontFamily: theme.Mono, TextOverflow: giode.TextOverflowEllipsis})),
 		actions,
 	)
 }

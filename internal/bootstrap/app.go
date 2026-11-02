@@ -3,10 +3,11 @@
 package bootstrap
 
 import (
+	"github.com/xmhrnx/serverus/internal/platform"
+
 	"fmt"
 	"image"
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/mehran9675/giode"
@@ -51,7 +52,6 @@ func Run() error {
 	theme.Apply(repo.Settings().Theme)
 	giode.SecureStore.Service = AppID
 
-	desktop := runtime.GOOS != "android" && runtime.GOOS != "ios"
 	e := &env.Env{
 		Repo:    repo,
 		Secrets: storage.Secrets{Store: secureStore{}},
@@ -63,7 +63,7 @@ func Run() error {
 		Size:       image.Pt(1380, 880),
 		MinSize:    image.Pt(980, 640),
 		Resizable:  true,
-		Frameless:  desktop,
+		Frameless:  platform.Desktop,
 		Center:     true,
 		Background: "theme.background",
 		Icon:       assets.Icon,

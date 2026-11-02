@@ -9,7 +9,6 @@ import (
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
 	"github.com/mehran9675/giode/components/scroll"
 	"github.com/mehran9675/giode/elements"
 
@@ -41,7 +40,7 @@ type Sidebar struct {
 	list     *scroll.Scroll
 	items    *giode.KeyedCache[string, *giode.PressableElement]
 	anchors  map[string]*image.Point
-	menu     *menu.Menu
+	menu     *widgets.ContextMenu
 	target   domain.Server
 }
 
@@ -63,7 +62,7 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		)
 	}).Label("Settings").OnClick(func(giode.ClickEvent) { actions.Settings() })
 
-	s.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	s.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("plug"), "Connect", func() { s.env.Sessions.Get(s.target).Connect() }).
 		IconItem(theme.IconSource("rotate-cw"), "Reconnect", func() { s.env.Sessions.Get(s.target).Reconnect() }).
 		IconItem(theme.IconSource("unplug"), "Disconnect", func() { s.env.Sessions.Get(s.target).Disconnect() }).
@@ -71,7 +70,7 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		IconItem(theme.IconSource("pencil"), "Edit…", func() { actions.Edit(s.target) }).
 		IconItem(theme.IconSource("copy"), "Duplicate…", func() { actions.Duplicate(s.target) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Delete", func() { actions.Delete(s.target) })
+		IconItem(theme.IconSource("trash-2"), "Delete", func() { actions.Delete(s.target) }))
 	return s
 }
 

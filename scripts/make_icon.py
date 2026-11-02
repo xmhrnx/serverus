@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-"""Draws assets/icon.png: a server chassis with three rack units as a face,
+"""Draws the app icon: a server chassis with three rack units as a face,
 framed by long, straight, black curtain hair parted in the middle.
+
+It writes three files:
+  assets/icon.png                the icon on its rounded green tile
+  assets/android-background.png  Android's adaptive icon background layer
+  assets/android-foreground.png  Android's adaptive icon foreground layer: the
+                                 character alone, inside the 66dp safe zone of
+                                 the 108dp canvas, so launchers can mask the
+                                 icon to any shape without edges showing
 
 Run from the repository root: python3 scripts/make_icon.py (needs Pillow)."""
 from PIL import Image, ImageDraw, ImageFilter
@@ -53,8 +61,11 @@ glow = glow.filter(ImageFilter.GaussianBlur(W * 0.08))
 bg.paste(Image.new("RGBA", (W, W), (46, 150, 104, 255)), (0, 0), glow)
 tile = Image.new("L", (W, W), 0)
 ImageDraw.Draw(tile).rounded_rectangle([*P(0.07, 0.07), *P(0.93, 0.93)], radius=int(W * 0.22), fill=255)
+background = bg
+
+# The character is drawn on its own transparent layer, composed onto the
+# tile at the end.
 img = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-img.paste(bg, (0, 0), tile)
 
 HAIR = (13, 13, 17, 255)
 STRAND = (44, 46, 56)
@@ -164,5 +175,20 @@ img = Image.alpha_composite(img, lines)
 d = ImageDraw.Draw(img)
 d.line([P(0.5, 0.158), P(0.5, 0.215)], fill=(70, 74, 84, 255), width=int(W * 0.005))
 
-img = img.resize((S, S), Image.LANCZOS)
-img.save("assets/icon.png")
+character = img
+
+icon = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+icon.paste(background, (0, 0), tile)
+icon = Image.alpha_composite(icon, character)
+icon.resize((S, S), Image.LANCZOS).save("assets/icon.png")
+
+background.convert("RGB").resize((S, S), Image.LANCZOS).save("assets/android-background.png")
+
+# The character spans about 0.62 x 0.72 of the canvas; scaled by 0.66 its
+# corners stay inside the circle launchers show.
+scale = 0.66
+small = character.resize((int(W * scale), int(W * scale)), Image.LANCZOS)
+foreground = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+offset = int(W * (1 - scale) / 2)
+foreground.alpha_composite(small, (offset, offset - int(W * 0.01)))
+foreground.resize((S, S), Image.LANCZOS).save("assets/android-foreground.png")

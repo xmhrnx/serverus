@@ -52,8 +52,8 @@ func serviceRow(s ops.Service, selected bool, ps giode.PressState, actions giode
 			giode.Text(s.Unit, giode.Styles{Color: theme.Text, FontSize: theme.TextBase, FontWeight: giode.FontWeightMedium, FontFamily: theme.Mono, TextOverflow: giode.TextOverflowEllipsis}),
 			giode.Text(s.Description, theme.Caption.With(giode.Styles{TextOverflow: giode.TextOverflowEllipsis})),
 		),
-		giode.Box(giode.Styles{Width: 140}, widgets.Pill(s.Active+" · "+s.Sub, tone)),
-		giode.Box(giode.Styles{Width: 90}, enabled),
+		giode.Box(giode.Styles{Width: 140, Display: widgets.HiddenOnPhones()}, widgets.Pill(s.Active+" · "+s.Sub, tone)),
+		giode.Box(giode.Styles{Width: 90, Display: widgets.HiddenOnPhones()}, enabled),
 		actions,
 	)
 }
