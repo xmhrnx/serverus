@@ -28,5 +28,5 @@ func DisksCard(s monitor.Snapshot) giode.Element {
 			widgets.Meter(p, theme.Level(p), 6),
 		))
 	}
-	return widgets.Card(giode.Styles{Width: -1}, rows...)
+	return widgets.Card(giode.Styles{Width: -1, FlexGrow: 1}, rows...)
 }

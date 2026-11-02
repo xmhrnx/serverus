@@ -11,7 +11,7 @@ import (
 
 // ThroughputChart plots network traffic in and out.
 func ThroughputChart(s monitor.Snapshot, c monitor.Charts) giode.Element {
-	return widgets.Card(giode.Styles{Width: -1},
+	return widgets.Card(giode.Styles{Width: -1, FlexGrow: 1},
 		widgets.CardHeader("arrow-up-down", theme.Info, "Network traffic", "All interfaces",
 			legend(theme.Info, "In", format.Rate(s.NetRxRate)),
 			legend(theme.Warning, "Out", format.Rate(s.NetTxRate)),

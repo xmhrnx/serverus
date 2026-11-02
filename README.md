@@ -68,6 +68,10 @@ macOS and Linux, and builds for Android.
   or **run on several servers at once** and compare the results side by side.
 
 **Interface**
+- A tray icon to open the window, connect and disconnect servers, and quit; minimize
+  to the tray, and on Windows and macOS keep running there when the window closes.
+- Keyboard shortcuts (listed in Settings): search servers, add a server, settings, a
+  new terminal tab, and Ctrl/⌘+1–8 to switch pages.
 - Dark and light themes (or follow the system), a custom title bar, and a layout that
   adapts down to phone width (the server list becomes a drawer).
 
@@ -95,8 +99,9 @@ giode build android
 Publishing a GitHub release builds every platform and attaches the packages to it
 (`.github/workflows/release.yml`). Tag the release `major.minor.patch.versionCode`, for
 example `1.0.0.1`: the first three parts are the version shown everywhere, the fourth is
-Android's versionCode, which must grow with every Play upload (the giode CLI treats 0 as
-1). Signing uses these repository secrets when present: `ANDROID_KEYSTORE_BASE64` and
+Android's versionCode, which must be at least 1 and grow with every Play upload. The
+workflow is written by `giode ci` from `[ci]` in `giode.toml`; change it there and run
+`giode ci -f`. Signing uses these repository secrets when present: `ANDROID_KEYSTORE_BASE64` and
 `GIODE_KEYSTORE_PASS`, `WINDOWS_CERT_BASE64` and `GIODE_WINDOWS_CERT_PASS`,
 `MACOS_CERT_BASE64`, `MACOS_CERT_PASS` and `GIODE_NOTARY_PASS`.
 
@@ -148,10 +153,6 @@ Each protocol implements only the capabilities it has; pages are shown for the
 capabilities a server's protocol provides, so adding a protocol means adding a package
 under `transport/` and a case in `connector`.
 
-## giode gaps
-
-What the app needs from giode and the CLI that isn't there yet is written up in
-[docs/GIODE_REQUIREMENTS.md](docs/GIODE_REQUIREMENTS.md).
 
 ## Icon
 

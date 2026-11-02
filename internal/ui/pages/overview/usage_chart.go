@@ -11,7 +11,7 @@ import (
 
 // UsageChart plots CPU and memory use over the last few minutes.
 func UsageChart(c monitor.Charts) giode.Element {
-	return widgets.Card(giode.Styles{Width: -1},
+	return widgets.Card(giode.Styles{Width: -1, FlexGrow: 1},
 		widgets.CardHeader("activity", theme.Primary, "CPU & memory", "Last few minutes",
 			legend(theme.Primary, "CPU", format.Percent(last(c.CPU))),
 			legend(theme.Accent, "RAM", format.Percent(last(c.Memory))),

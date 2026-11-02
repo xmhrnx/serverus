@@ -3,12 +3,12 @@ package docker
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
+	"github.com/mehran9675/giode/components/menu"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -34,8 +34,7 @@ type Page struct {
 	rows     *giode.KeyedCache[string, *giode.PressableElement]
 	toggles  *giode.KeyedCache[string, *widgets.ToolButton]
 	logs     *giode.KeyedCache[string, *widgets.ToolButton]
-	anchor   *widgets.ListAnchor
-	menu     *widgets.ContextMenu
+	menu     *menu.Menu
 	target   ops.Container
 	output   *dialogs.OutputDialog
 }
@@ -50,10 +49,9 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.logs = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	p.list = giode.VirtualList(func() int { return len(p.visible()) }, 58, p.row,
 		giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).ClickFocusesRow(false)
-	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 58)
 	p.output = dialogs.NewOutputDialog(e)
 	act := func(a ops.ContainerAction) func() { return func() { p.do(p.target, a) } }
-	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("play"), "Start", act(ops.ContainerStart)).
 		IconItem(theme.IconSource("square"), "Stop", act(ops.ContainerStop)).
 		IconItem(theme.IconSource("rotate-cw"), "Restart", act(ops.ContainerRestart)).
@@ -63,7 +61,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("scroll-text"), "Logs", func() { p.showLogs(p.target) }).
 		IconItem(theme.IconSource("copy"), "Copy ID", func() { p.env.App.SetClipboard(p.target.ID) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Remove", act(ops.ContainerRemove)))
+		IconItem(theme.IconSource("trash-2"), "Remove", act(ops.ContainerRemove))
 	return p
 }
 
@@ -136,7 +134,7 @@ func (p *Page) row(i int) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if c, ok := p.lookup(id); ok {
 				p.selected, p.target = id, c
-				p.menu.OpenAt(p.anchor.At(slices.IndexFunc(p.visible(), func(x ops.Container) bool { return x.ID == id }), e))
+				p.menu.OpenAt(widgets.ClickPoint(e))
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
@@ -240,5 +238,5 @@ func (p *Page) body() giode.Element {
 	if len(p.visible()) == 0 {
 		return widgets.EmptyState("container", "No containers", "Containers you run on this server show up here.")
 	}
-	return p.anchor.Wrap(p.list)
+	return p.list
 }

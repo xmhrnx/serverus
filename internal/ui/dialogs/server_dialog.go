@@ -85,6 +85,7 @@ func NewServerDialog(e *env.Env, creds transport.Credentials, dialers DialerFact
 	d.auth = giode.Input.Segmented(authLabels...).Styles(giode.Styles{Width: -1, FontSize: theme.TextSm})
 	d.ftps = giode.Input.Switch("Use explicit TLS (FTPS)", giode.Styles{Color: theme.Text, FontSize: theme.TextBase})
 	d.accent = NewAccentPicker()
+	d.jump = giode.Input.Select(giode.Styles{Width: -1, Background: theme.Sunken, Color: theme.Text, BorderColor: theme.Border, BorderRadius: theme.RadiusMd}, "None — connect directly")
 
 	d.browse = widgets.Button(widgets.Secondary, "Browse…", "folder-open").OnClick(d.pickKey)
 	d.test = widgets.Button(widgets.Ghost, "Test connection", "plug").OnClick(d.testConnection)
@@ -148,8 +149,7 @@ func (d *ServerDialog) load(s domain.Server, isNew bool) {
 	d.name.Focus()
 }
 
-// buildJumpHosts lists the SSH servers that can carry this one. The
-// select is rebuilt because its options can't change after creation.
+// buildJumpHosts lists the SSH servers that can carry this one.
 func (d *ServerDialog) buildJumpHosts(s domain.Server) {
 	opts := []string{"None — connect directly"}
 	d.jumpIDs = []string{""}
@@ -164,7 +164,7 @@ func (d *ServerDialog) buildJumpHosts(s domain.Server) {
 			selected = len(d.jumpIDs) - 1
 		}
 	}
-	d.jump = giode.Input.Select(giode.Styles{Width: -1, Background: theme.Sunken, Color: theme.Text, BorderColor: theme.Border, BorderRadius: theme.RadiusMd}, opts...)
+	d.jump.SetOptions(opts...)
 	d.jump.SetSelected(selected)
 }
 

@@ -92,6 +92,9 @@ func (p *Page) current() *tab {
 	return p.tabs[p.active]
 }
 
+// NewTab opens another shell.
+func (p *Page) NewTab() { p.addTab() }
+
 func (p *Page) addTab() {
 	if p.session.Server().Protocol == domain.ProtocolTelnet && len(p.tabs) > 0 {
 		p.env.Info("Telnet carries a single session per connection")

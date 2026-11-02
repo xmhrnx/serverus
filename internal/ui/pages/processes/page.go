@@ -9,6 +9,7 @@ import (
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
+	"github.com/mehran9675/giode/components/menu"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -53,9 +54,7 @@ type Page struct {
 	list        *giode.VirtualListElement
 	compactList *giode.VirtualListElement
 	rows        *giode.KeyedCache[int, *giode.PressableElement]
-	anchor      *widgets.ListAnchor
-	phoneAnchor *widgets.ListAnchor
-	menu        *widgets.ContextMenu
+	menu        *menu.Menu
 	target      ops.Process
 	pause       *widgets.ToolButton
 }
@@ -79,16 +78,14 @@ func New(e *env.Env, s *session.Session) *Page {
 	listStyle := giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}
 	p.list = giode.VirtualList(count, 46, p.row, listStyle).ClickFocusesRow(false)
 	p.compactList = giode.VirtualList(count, 58, p.row, listStyle).ClickFocusesRow(false)
-	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 46)
-	p.phoneAnchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.compactList }, 58)
 	p.pause = widgets.NewToolButton("circle-stop", "Pause updates", func() { p.paused = !p.paused })
-	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("x"), "Terminate (SIGTERM)", func() { p.signal(p.target, ops.SignalTerm) }).
 		IconItem(theme.IconSource("skull"), "Kill (SIGKILL)", func() { p.signal(p.target, ops.SignalKill) }).
 		IconItem(theme.IconSource("rotate-cw"), "Reload (SIGHUP)", func() { p.signal(p.target, ops.SignalHup) }).
 		Separator().
 		IconItem(theme.IconSource("copy"), "Copy command line", func() { p.env.App.SetClipboard(p.target.Command) }).
-		IconItem(theme.IconSource("copy"), "Copy PID", func() { p.env.App.SetClipboard(fmt.Sprint(p.target.PID)) }))
+		IconItem(theme.IconSource("copy"), "Copy PID", func() { p.env.App.SetClipboard(fmt.Sprint(p.target.PID)) })
 	return p
 }
 
@@ -153,11 +150,7 @@ func (p *Page) row(i int) giode.Element {
 			return
 		}
 		p.selected, p.target = pr.PID, pr
-		anchor := p.anchor
-		if giode.Compact() {
-			anchor = p.phoneAnchor
-		}
-		p.menu.OpenAt(anchor.At(i, e))
+		p.menu.OpenAt(widgets.ClickPoint(e))
 	}
 	pr := p.rows.Get(i, func() *giode.PressableElement {
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
@@ -291,7 +284,7 @@ func (p *Page) body(compact bool) giode.Element {
 		return widgets.Loading("Listing processes…")
 	}
 	if compact {
-		return p.phoneAnchor.Wrap(p.compactList)
+		return p.compactList
 	}
-	return p.anchor.Wrap(p.list)
+	return p.list
 }

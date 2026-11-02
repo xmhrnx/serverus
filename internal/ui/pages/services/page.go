@@ -3,12 +3,12 @@ package services
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
+	"github.com/mehran9675/giode/components/menu"
 	"github.com/mehran9675/giode/components/segmented"
 
 	"github.com/xmhrnx/serverus/internal/ops"
@@ -41,8 +41,7 @@ type Page struct {
 	rows     *giode.KeyedCache[string, *giode.PressableElement]
 	restarts *giode.KeyedCache[string, *widgets.ToolButton]
 	logsBtns *giode.KeyedCache[string, *widgets.ToolButton]
-	anchor   *widgets.ListAnchor
-	menu     *widgets.ContextMenu
+	menu     *menu.Menu
 	target   ops.Service
 	refresh  *widgets.ToolButton
 	output   *dialogs.OutputDialog
@@ -59,11 +58,10 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.logsBtns = giode.NewKeyedCache[string, *widgets.ToolButton]()
 	p.list = giode.VirtualList(func() int { return len(p.visible()) }, 52, p.row,
 		giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).ClickFocusesRow(false)
-	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 52)
 	p.refresh = widgets.NewToolButton("refresh-cw", "Refresh", p.load)
 	p.output = dialogs.NewOutputDialog(e)
 	act := func(a ops.ServiceAction) func() { return func() { p.do(p.target, a) } }
-	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("play"), "Start", act(ops.ServiceStart)).
 		IconItem(theme.IconSource("square"), "Stop", act(ops.ServiceStop)).
 		IconItem(theme.IconSource("rotate-cw"), "Restart", act(ops.ServiceRestart)).
@@ -73,7 +71,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("circle-stop"), "Don't start at boot", act(ops.ServiceDisable)).
 		Separator().
 		IconItem(theme.IconSource("scroll-text"), "Logs", func() { p.showLogs(p.target) }).
-		IconItem(theme.IconSource("info"), "Status", func() { p.showStatus(p.target) }))
+		IconItem(theme.IconSource("info"), "Status", func() { p.showStatus(p.target) })
 	return p
 }
 
@@ -154,7 +152,7 @@ func (p *Page) row(i int) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if s, ok := p.lookup(unit); ok {
 				p.selected, p.target = unit, s
-				p.menu.OpenAt(p.anchor.At(slices.IndexFunc(p.visible(), func(x ops.Service) bool { return x.Unit == unit }), e))
+				p.menu.OpenAt(widgets.ClickPoint(e))
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
@@ -280,5 +278,5 @@ func (p *Page) body() giode.Element {
 	if len(p.visible()) == 0 {
 		return widgets.EmptyState("layers", "No services match", "Try another filter.")
 	}
-	return p.anchor.Wrap(p.list)
+	return p.list
 }

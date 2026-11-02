@@ -1,16 +1,6 @@
-# Builds every platform when a GitHub release is published and adds the
-# packages to it.
-#
-# Started from `giode ci` (with [ci] trigger = "release") and then edited
-# by hand; don't regenerate it with `giode ci -f`, which would undo the
-# version handling below.
-#
-# The release tag is the full version, major.minor.patch.versionCode, as
-# gogio numbers Android builds: 1.0.0.0, or v1.0.0.0. The first three
-# parts become app.version (versionName on Android, the version shown on
-# every platform) and the fourth app.build (Android's versionCode, iOS's
-# CFBundleVersion). Google Play needs the versionCode to grow with every
-# upload, and the giode CLI treats a build of 0 as 1.
+# Written by giode ci from giode.toml; rerun giode ci -f after changing
+# [ci] there rather than editing this file.
+# Builds when a GitHub release is published and adds the files to it.
 name: release
 
 on:
@@ -20,29 +10,12 @@ on:
 permissions:
   contents: write
 
-jobs:
-  version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.parse.outputs.version }}
-      build: ${{ steps.parse.outputs.build }}
-    steps:
-      - name: Read the version from the release tag
-        id: parse
-        env:
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          v="${TAG#v}"
-          if ! echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::The release tag '$TAG' must be major.minor.patch.versionCode, like 1.0.0.0"
-            exit 1
-          fi
-          echo "version=${v%.*}" >> "$GITHUB_OUTPUT"
-          echo "build=${v##*.}" >> "$GITHUB_OUTPUT"
-          echo "Version ${v%.*}, Android versionCode ${v##*.}" >> "$GITHUB_STEP_SUMMARY"
+env:
+  # A four-part tag (v1.4.2.7) also sets the build number.
+  GIODE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
 
+jobs:
   test:
-    needs: version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,10 +31,7 @@ jobs:
           go test ./...
 
   linux:
-    needs: [version, test]
-    env:
-      GIODE_VERSION: ${{ needs.version.outputs.version }}
-      GIODE_BUILD: ${{ needs.version.outputs.build }}
+    needs: test
     strategy:
       matrix:
         include:
@@ -88,33 +58,16 @@ jobs:
           if [ -n "$WINDOWS_CERT_BASE64" ]; then echo "$WINDOWS_CERT_BASE64" | base64 -d > codesign.pfx; fi
       - name: Build Linux packages
         run: giode build deb rpm
-      - name: Build Windows
-        if: matrix.primary
-        env:
-          GIODE_WINDOWS_CERT_PASS: ${{ secrets.GIODE_WINDOWS_CERT_PASS }}
-        run: |
-          # Signed when the repository has the certificate.
-          win=""; if [ -n "$GIODE_WINDOWS_CERT_PASS" ]; then win="-release"; fi
-          giode build $win -arch amd64 windows-installer msix
-      - name: Install bundletool
-        if: matrix.primary
-        env:
-          BUNDLETOOL_VERSION: "1.18.1"
-        run: |
-          # giode build aab runs Google's bundletool from the SDK's
-          # build-tools folder, which the runner image doesn't include.
-          curl -fsSL -o bundletool.jar "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
-          sha256sum bundletool.jar
-          for d in "$ANDROID_HOME"/build-tools/*/; do cp bundletool.jar "$d/bundletool-all-${BUNDLETOOL_VERSION}.jar"; done
-          rm bundletool.jar
-      - name: Build Android
+      - name: Build Windows Android
         if: matrix.primary
         env:
           GIODE_KEYSTORE_PASS: ${{ secrets.GIODE_KEYSTORE_PASS }}
+          GIODE_WINDOWS_CERT_PASS: ${{ secrets.GIODE_WINDOWS_CERT_PASS }}
         run: |
-          # Signed when the repository has the keystore.
+          # Signed when the repository has the certificate or keystore.
+          win=""; if [ -n "$GIODE_WINDOWS_CERT_PASS" ]; then win="-release"; fi
+          giode build $win -arch amd64 windows-installer msix
           apk=""; if [ -n "$GIODE_KEYSTORE_PASS" ]; then apk="-release"; fi
-          giode doctor || true
           giode build $apk android aab
       - uses: actions/upload-artifact@v4
         with:
@@ -130,12 +83,10 @@ jobs:
             dist/android/native-debug-symbols.zip
 
   macos:
-    needs: [version, test]
+    needs: test
     runs-on: macos-latest
     env:
       MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
-      GIODE_VERSION: ${{ needs.version.outputs.version }}
-      GIODE_BUILD: ${{ needs.version.outputs.build }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -168,6 +119,7 @@ jobs:
 
   publish:
     needs: [linux, macos]
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -177,4 +129,4 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ github.ref_name }}

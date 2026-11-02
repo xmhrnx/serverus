@@ -21,7 +21,7 @@ func kpiTile(icon, label, value, detail, sub string, visual giode.Element) giode
 	if sub != "" {
 		lines = append(lines, giode.Text(sub, theme.Caption.With(giode.Styles{Color: theme.Faint, FontSize: theme.TextXS, TextOverflow: giode.TextOverflowEllipsis})))
 	}
-	return widgets.Card(giode.Styles{Width: -1, Padding: giode.UniformInset(theme.Space5)},
+	return widgets.Card(giode.Styles{Width: -1, FlexGrow: 1, Padding: giode.UniformInset(theme.Space5)},
 		giode.Row(giode.Styles{Gap: theme.Space4, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Width: -1},
 			giode.Stack(giode.Styles{Gap: 4, FlexGrow: 1}, lines...),
 			visual,

@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"fmt"
+
 	"github.com/xmhrnx/serverus/internal/platform"
 
 	"time"
@@ -15,6 +17,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/dialogs"
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/pages/settings"
+	"github.com/xmhrnx/serverus/internal/ui/shortcuts"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 	"github.com/xmhrnx/serverus/internal/ui/tray"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
@@ -191,6 +194,7 @@ func (r *Root) main() giode.Element {
 // Layout draws the window.
 func (r *Root) Layout(gtx layout.Context) layout.Dimensions {
 	r.tray.Sync()
+	r.registerShortcuts()
 	if theme.IsDark() {
 		r.themeBtn.SetIcon("sun")
 	} else {
@@ -239,4 +243,26 @@ func (r *Root) compact() giode.Element {
 		giode.Divider(giode.Styles{Color: theme.SubtleBorder}),
 		giode.Box(giode.Styles{FlexGrow: 1, Width: -1, Height: -1, Background: theme.Background}, r.main()),
 	)
+}
+
+// registerShortcuts registers the app-wide keyboard shortcuts for this
+// frame. They get only keys nothing else took: a focused terminal keeps
+// Ctrl combinations for the shell.
+func (r *Root) registerShortcuts() {
+	list := []giode.KeyShortcut{
+		giode.Shortcut(shortcuts.Search, func() {
+			r.navOn = giode.Compact()
+			r.sidebar.FocusSearch()
+		}),
+		giode.Shortcut(shortcuts.AddServer, r.editor.Add),
+		giode.Shortcut(shortcuts.Settings, func() { r.showSettings = true }),
+	}
+	if v, ok := r.views[r.selected]; ok && !r.showSettings {
+		list = append(list, giode.Shortcut(shortcuts.NewTerminal, v.NewTerminalTab))
+		for n := 1; n <= 8; n++ {
+			n := n
+			list = append(list, giode.Shortcut(fmt.Sprintf("%s%d", shortcuts.Page, n), func() { v.ShowNth(n) }))
+		}
+	}
+	giode.Shortcuts(list...)
 }

@@ -52,5 +52,7 @@ publisher = "CN=xmhrnx"
 categories = ["Network", "System", "Utility"]     # freedesktop menu categories
 # license = "MIT"            # SPDX, for .deb, .rpm and AppStream
 
-[ci]  # .github/workflows/release.yml started from giode ci and is now edited by hand
-trigger = "release"
+[ci]
+trigger = "release"   # build when a GitHub release is published
+build = "tag"         # the tag is major.minor.patch.versionCode (1.0.0.1); its last part is the build number
+dispatch = false      # no "Run workflow" button: releases only

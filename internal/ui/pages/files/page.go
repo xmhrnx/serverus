@@ -7,11 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
+	"github.com/mehran9675/giode/components/menu"
 
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/transport"
@@ -40,16 +40,14 @@ type Page struct {
 	data        *async.Resource[listing]
 	downloadDir string
 
-	filter      *widgets.SearchField
-	crumbs      *Breadcrumb
-	headers     []*widgets.SortHeader
-	list        *giode.VirtualListElement
-	phoneList   *giode.VirtualListElement
-	rows        *giode.KeyedCache[string, *giode.PressableElement]
-	anchor      *widgets.ListAnchor
-	phoneAnchor *widgets.ListAnchor
-	menu        *widgets.ContextMenu
-	target      transport.FileInfo
+	filter    *widgets.SearchField
+	crumbs    *Breadcrumb
+	headers   []*widgets.SortHeader
+	list      *giode.VirtualListElement
+	phoneList *giode.VirtualListElement
+	rows      *giode.KeyedCache[string, *giode.PressableElement]
+	menu      *menu.Menu
+	target    transport.FileInfo
 
 	backBtn, upBtn, homeBtn, refreshBtn, hiddenBtn *widgets.ToolButton
 	newFolder, newFile                             *widgets.ToolButton
@@ -89,8 +87,6 @@ func New(e *env.Env, s *session.Session) *Page {
 				p.activate(v[i])
 			}
 		})
-	p.anchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.list }, 38)
-	p.phoneAnchor = widgets.NewListAnchor(func() *giode.VirtualListElement { return p.phoneList }, 54)
 
 	p.backBtn = widgets.NewToolButton("arrow-left", "Back", p.goBack)
 	p.upBtn = widgets.NewToolButton("arrow-up", "Parent folder", func() { p.navigate(transport.Parent(p.cwd)) })
@@ -105,7 +101,7 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.names = NewNameDialog()
 	p.chmod = NewChmodDialog()
 	p.editor = NewEditorDialog(e)
-	p.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("folder-open"), "Open", func() { p.activate(p.target) }).
 		IconItem(theme.IconSource("pencil"), "Edit", func() { p.edit(p.target) }).
 		IconItem(theme.IconSource("download"), "Download", func() { p.download(p.target, false) }).
@@ -115,7 +111,7 @@ func New(e *env.Env, s *session.Session) *Page {
 		IconItem(theme.IconSource("lock"), "Permissions…", func() { p.askChmod(p.target) }).
 		IconItem(theme.IconSource("copy"), "Copy path", func() { p.env.App.SetClipboard(p.pathOf(p.target)) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Delete", func() { p.confirmDelete(p.target) }))
+		IconItem(theme.IconSource("trash-2"), "Delete", func() { p.confirmDelete(p.target) })
 	return p
 }
 
@@ -236,11 +232,7 @@ func (p *Page) row(i int) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if cur, ok := p.lookup(name); ok {
 				p.selected, p.target = name, cur
-				anchor := p.anchor
-				if giode.Compact() {
-					anchor = p.phoneAnchor
-				}
-				p.menu.OpenAt(anchor.At(p.indexOf(name), e))
+				p.menu.OpenAt(widgets.ClickPoint(e))
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
@@ -263,12 +255,6 @@ func (p *Page) row(i int) giode.Element {
 	})
 	pr.Label(f.Name)
 	return pr
-}
-
-// indexOf is the row a file is shown in. Rows are keyed by name, and a
-// file's row moves as the listing is filtered and sorted.
-func (p *Page) indexOf(name string) int {
-	return slices.IndexFunc(p.visible(), func(f transport.FileInfo) bool { return f.Name == name })
 }
 
 func (p *Page) lookup(name string) (transport.FileInfo, bool) {
@@ -549,9 +535,9 @@ func (p *Page) body() giode.Element {
 		return widgets.EmptyState("folder-open", "This folder is empty", "Drop files on the window or use Upload to add some.", p.upload)
 	}
 	if giode.Compact() {
-		return p.phoneAnchor.Wrap(p.phoneList)
+		return p.phoneList
 	}
-	return p.anchor.Wrap(p.list)
+	return p.list
 }
 
 func (p *Page) footer() giode.Element {

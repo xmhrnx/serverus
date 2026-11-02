@@ -1,16 +1,14 @@
 package shell
 
 import (
-	"image"
 	"slices"
 	"sort"
 	"strings"
 
-	"gioui.org/f32"
 	"gioui.org/layout"
 	"github.com/mehran9675/giode"
+	"github.com/mehran9675/giode/components/menu"
 	"github.com/mehran9675/giode/components/scroll"
-	"github.com/mehran9675/giode/elements"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/ui/env"
@@ -39,14 +37,13 @@ type Sidebar struct {
 	settings *giode.PressableElement
 	list     *scroll.Scroll
 	items    *giode.KeyedCache[string, *giode.PressableElement]
-	anchors  map[string]*image.Point
-	menu     *widgets.ContextMenu
+	menu     *menu.Menu
 	target   domain.Server
 }
 
 // NewSidebar returns the sidebar.
 func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
-	s := &Sidebar{env: e, actions: actions, anchors: map[string]*image.Point{}}
+	s := &Sidebar{env: e, actions: actions}
 	s.search = widgets.NewSearchField("Search servers", nil)
 	s.add = widgets.NewToolButton("plus", "Add a server", actions.Add)
 	s.items = giode.NewKeyedCache[string, *giode.PressableElement]()
@@ -62,7 +59,7 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		)
 	}).Label("Settings").OnClick(func(giode.ClickEvent) { actions.Settings() })
 
-	s.menu = widgets.NewContextMenu(giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	s.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("plug"), "Connect", func() { s.env.Sessions.Get(s.target).Connect() }).
 		IconItem(theme.IconSource("rotate-cw"), "Reconnect", func() { s.env.Sessions.Get(s.target).Reconnect() }).
 		IconItem(theme.IconSource("unplug"), "Disconnect", func() { s.env.Sessions.Get(s.target).Disconnect() }).
@@ -70,9 +67,12 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		IconItem(theme.IconSource("pencil"), "Edit…", func() { actions.Edit(s.target) }).
 		IconItem(theme.IconSource("copy"), "Duplicate…", func() { actions.Duplicate(s.target) }).
 		Separator().
-		IconItem(theme.IconSource("trash-2"), "Delete", func() { actions.Delete(s.target) }))
+		IconItem(theme.IconSource("trash-2"), "Delete", func() { actions.Delete(s.target) })
 	return s
 }
+
+// FocusSearch puts the keyboard in the search field.
+func (s *Sidebar) FocusSearch() { s.search.Focus() }
 
 // filtered returns the servers matching the search, grouped and sorted.
 func (s *Sidebar) filtered() (groups []string, byGroup map[string][]domain.Server) {
@@ -113,13 +113,14 @@ func matches(s domain.Server, q string) bool {
 }
 
 func (s *Sidebar) item(srv domain.Server) giode.Element {
-	anchor, ok := s.anchors[srv.ID]
-	if !ok {
-		anchor = new(image.Point)
-		s.anchors[srv.ID] = anchor
-	}
 	p := s.items.Get(srv.ID, func() *giode.PressableElement {
 		id := srv.ID
+		openMenu := func(e giode.ClickEvent) {
+			if cur, ok := s.env.Repo.Server(id); ok {
+				s.target = cur
+				s.menu.OpenAt(widgets.ClickPoint(e))
+			}
+		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
 			cur, ok := s.env.Repo.Server(id)
 			if !ok {
@@ -130,26 +131,10 @@ func (s *Sidebar) item(srv domain.Server) giode.Element {
 			if cur, ok := s.env.Repo.Server(id); ok {
 				s.actions.Select(cur)
 			}
-		}).OnSecondaryClick(func(e giode.ClickEvent) {
-			if cur, ok := s.env.Repo.Server(id); ok {
-				s.target = cur
-				s.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-			}
-		}).OnLongPress(func(e giode.ClickEvent) {
-			if cur, ok := s.env.Repo.Server(id); ok {
-				s.target = cur
-				s.menu.OpenAt(f32.Pt(float32(anchor.X+e.Position.X), float32(anchor.Y+e.Position.Y)))
-			}
-		})
+		}).OnSecondaryClick(openMenu).OnLongPress(openMenu)
 	})
 	p.Label(srv.Name)
-	return giode.Raw(func(gtx layout.Context) layout.Dimensions {
-		// Track after laying out: click handlers run inside Layout and
-		// need the exact position from the last frame.
-		dims := p.Layout(gtx)
-		elements.TrackPosition(anchor)
-		return dims
-	})
+	return p
 }
 
 func (s *Sidebar) content() giode.Element {

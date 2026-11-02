@@ -113,6 +113,9 @@ func (p *Page) content() giode.Element {
 	if w := p.windowSection(); w != nil {
 		sections = append(sections, w)
 	}
+	if k := shortcutsSection(); k != nil {
+		sections = append(sections, k)
+	}
 	return giode.Box(giode.Styles{Width: -1, Justify: giode.JustifyCenter, Padding: giode.UniformInset(theme.Space6)},
 		giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1, MaxWidth: 760}, append(sections,
 			section("activity", "Monitoring",

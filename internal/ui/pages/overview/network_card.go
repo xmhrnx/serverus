@@ -27,5 +27,5 @@ func NetworkCard(s monitor.Snapshot) giode.Element {
 			),
 		))
 	}
-	return widgets.Card(giode.Styles{Width: -1}, rows...)
+	return widgets.Card(giode.Styles{Width: -1, FlexGrow: 1}, rows...)
 }
