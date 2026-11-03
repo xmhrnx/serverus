@@ -5,6 +5,7 @@ package transfer
 import (
 	"context"
 	"io"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -125,11 +126,55 @@ func (j *Job) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(&countingWriter{w: dst, n: &j.done, ctx: ctx}, src)
+	err = j.copy(ctx, dst, src)
 	if cerr := dst.Close(); err == nil {
 		err = cerr
 	}
 	return err
+}
+
+// copy moves src to dst through whichever side can pipeline: an SFTP
+// file sends many requests at once from ReadFrom and WriteTo, where a
+// plain 32 KB copy waits a round trip for every chunk.
+func (j *Job) copy(ctx context.Context, dst io.Writer, src io.Reader) error {
+	_, srcIsLocal := src.(*os.File)
+	_, dstIsLocal := dst.(*os.File)
+	if wt, ok := src.(io.WriterTo); ok && !srcIsLocal {
+		_, err := wt.WriteTo(&countingWriter{w: dst, n: &j.done, ctx: ctx})
+		return err
+	}
+	if rf, ok := dst.(io.ReaderFrom); ok && !dstIsLocal {
+		_, err := rf.ReadFrom(&countingReader{r: src, n: &j.done, ctx: ctx, size: j.Size})
+		return err
+	}
+	_, err := io.Copy(&countingWriter{w: dst, n: &j.done, ctx: ctx}, src)
+	return err
+}
+
+// countingReader counts bytes and stops the copy when ctx ends. Size
+// tells an SFTP file how many requests it may keep in flight.
+type countingReader struct {
+	r    io.Reader
+	n    *atomic.Int64
+	ctx  context.Context
+	size int64
+}
+
+func (c *countingReader) Read(p []byte) (int, error) {
+	if err := c.ctx.Err(); err != nil {
+		return 0, err
+	}
+	n, err := c.r.Read(p)
+	c.n.Add(int64(n))
+	return n, err
+}
+
+// Size is the bytes left to read, or -1 when unknown.
+func (c *countingReader) Size() int64 {
+	if c.size < 0 {
+		return -1
+	}
+	return max(0, c.size-c.n.Load())
 }
 
 // countingWriter counts bytes and stops the copy when ctx ends.
