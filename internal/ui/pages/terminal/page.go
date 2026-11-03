@@ -38,6 +38,8 @@ type Page struct {
 	snippets       *menu.Menu
 	snippetTrigger giode.Element
 	snippetIDs     []string
+	more           *menu.Menu
+	moreTrigger    giode.Element
 	reopen         *giode.ButtonElement
 	closeEnded     *giode.ButtonElement
 }
@@ -56,22 +58,9 @@ func New(e *env.Env, s *session.Session) *Page {
 	})
 	p.closers = giode.NewKeyedCache[int, *widgets.ToolButton]()
 	p.newTab = widgets.NewToolButton("plus", "New tab", p.addTab)
-	p.copyBtn = widgets.NewToolButton("copy", "Copy selection (Ctrl+Shift+C)", func() {
-		if t := p.current(); t != nil && !t.view.Copy() {
-			e.Info("Select text with the mouse first")
-		}
-	})
-	p.pasteBtn = widgets.NewToolButton("clipboard-paste", "Paste (Ctrl+Shift+V)", func() {
-		if t := p.current(); t != nil {
-			t.view.Paste()
-			t.view.Focus()
-		}
-	})
-	p.clearBtn = widgets.NewToolButton("eraser", "Clear scrollback", func() {
-		if t := p.current(); t != nil {
-			t.screen.ClearScrollback()
-		}
-	})
+	p.copyBtn = widgets.NewToolButton("copy", "Copy selection (Ctrl+Shift+C)", p.copySelection)
+	p.pasteBtn = widgets.NewToolButton("clipboard-paste", "Paste (Ctrl+Shift+V)", p.paste)
+	p.clearBtn = widgets.NewToolButton("eraser", "Clear scrollback", p.clearScrollback)
 	p.reopen = widgets.Button(widgets.Primary, "Start a new shell", "rotate-cw").OnClick(func() {
 		if t := p.current(); t != nil {
 			t.open(p.env, p.session)
@@ -90,6 +79,25 @@ func (p *Page) current() *tab {
 		return nil
 	}
 	return p.tabs[p.active]
+}
+
+func (p *Page) copySelection() {
+	if t := p.current(); t != nil && !t.view.Copy() {
+		p.env.Info("Select some text first")
+	}
+}
+
+func (p *Page) paste() {
+	if t := p.current(); t != nil {
+		t.view.Paste()
+		t.view.Focus()
+	}
+}
+
+func (p *Page) clearScrollback() {
+	if t := p.current(); t != nil {
+		t.screen.ClearScrollback()
+	}
 }
 
 // NewTab opens another shell.
@@ -163,6 +171,21 @@ func (p *Page) syncSnippets() {
 	}
 	p.snippets = m
 	p.snippetTrigger = m.Trigger(widgets.NewToolButton("scroll-text", "Insert a snippet", nil))
+
+	// Phones fold the tools into one menu, leaving the strip to the tabs.
+	more := giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+		IconItem(theme.IconSource("copy"), "Copy selection", p.copySelection).
+		IconItem(theme.IconSource("clipboard-paste"), "Paste", p.paste).
+		IconItem(theme.IconSource("eraser"), "Clear scrollback", p.clearScrollback)
+	if len(snips) > 0 {
+		more.Separator()
+	}
+	for _, s := range snips {
+		cmd := s.Command
+		more.IconItem(theme.IconSource("scroll-text"), s.Name, func() { p.SendText(cmd) })
+	}
+	p.more = more
+	p.moreTrigger = more.Trigger(widgets.NewToolButton("ellipsis-vertical", "More", nil))
 }
 
 // Layout draws the tab strip and the active terminal.
@@ -185,15 +208,18 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 	if giode.TouchInput() || giode.Compact() {
 		children = append(children, p.keyBar)
 	}
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space2}, children...), p.snippets).Layout(gtx)
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space2}, children...), p.snippets, p.more).Layout(gtx)
 }
 
 // strip is the tab row and the tools; the tabs scroll sideways when
 // there are more than fit.
 func (p *Page) strip() giode.Element {
+	tabs := giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.tabScroll)
+	if giode.Compact() {
+		return giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Gap: theme.Space1, Wrap: giode.WrapNoWrap}, tabs, p.moreTrigger)
+	}
 	return giode.Row(giode.Styles{Width: -1, Align: giode.AlignCenter, Gap: theme.Space2, Wrap: giode.WrapNoWrap},
-		giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.tabScroll),
-		p.snippetTrigger, p.copyBtn, p.pasteBtn, p.clearBtn,
+		tabs, p.snippetTrigger, p.copyBtn, p.pasteBtn, p.clearBtn,
 	)
 }
 
@@ -238,10 +264,24 @@ func (p *Page) body() giode.Element {
 		return giode.Box(giode.Styles{Width: -1, Height: -1},
 			t.view,
 			giode.Box(giode.Styles{Position: giode.PositionAbsolute, Left: giode.Flush, Right: giode.Flush, Bottom: theme.Space6, Justify: giode.JustifyCenter},
-				widgets.Card(giode.Styles{FlexDirection: giode.FlexDirectionRow, Align: giode.AlignCenter, Gap: theme.Space3, Padding: giode.SymmetricInset(theme.Space4, theme.Space3), BoxShadow: giode.BoxShadow{Y: 8, Blur: 24, Color: "#00000080"}},
-					giode.Text(msg, theme.Body), p.reopen, p.closeEnded),
+				p.endedCard(msg),
 			),
 		)
 	}
 	return t.view
+}
+
+// endedCard offers a new shell once one exits; phones stack the message
+// above the buttons.
+func (p *Page) endedCard(msg string) giode.Element {
+	style := giode.Styles{
+		FlexDirection: giode.FlexDirectionRow, Align: giode.AlignCenter, Gap: theme.Space3,
+		Padding: giode.SymmetricInset(theme.Space4, theme.Space3), BoxShadow: giode.BoxShadow{Y: 8, Blur: 24, Color: "#00000080"},
+	}
+	if giode.Compact() {
+		style.FlexDirection = giode.FlexDirectionColumn
+		return widgets.Card(style, giode.Text(msg, theme.Body),
+			giode.Row(giode.Styles{Gap: theme.Space2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap}, p.reopen, p.closeEnded))
+	}
+	return widgets.Card(style, giode.Text(msg, theme.Body), p.reopen, p.closeEnded)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/menu"
 
+	"github.com/xmhrnx/serverus/internal/platform"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/transport"
 	"github.com/xmhrnx/serverus/internal/ui/async"
@@ -53,6 +54,8 @@ type Page struct {
 	newFolder, newFile                             *widgets.ToolButton
 	upload                                         *giode.ButtonElement
 	uploadIcon                                     *widgets.ToolButton
+	uploadMenu                                     *menu.Menu
+	uploadTool, uploadWide                         giode.Element
 
 	names  *NameDialog
 	chmod  *ChmodDialog
@@ -97,6 +100,15 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.newFile = widgets.NewToolButton("file-plus", "New file", p.askNewFile)
 	p.upload = widgets.Button(widgets.Primary, "Upload", "upload").OnClick(p.pickUploads)
 	p.uploadIcon = widgets.NewToolButton("upload", "Upload", p.pickUploads).Tint(theme.Primary)
+	p.uploadMenu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+		IconItem(theme.IconSource("file-plus"), "Upload files…", p.pickUploads).
+		IconItem(theme.IconSource("folder-plus"), "Upload a folder…", p.pickFolderUpload)
+	p.uploadTool, p.uploadWide = p.uploadIcon, p.upload
+	if platform.Desktop {
+		// Phones hand apps no folder paths, so they upload files only.
+		p.uploadTool = p.uploadMenu.Trigger(widgets.NewToolButton("upload", "Upload", nil).Tint(theme.Primary))
+		p.uploadWide = p.uploadMenu.Trigger(widgets.Button(widgets.Primary, "Upload", "upload"))
+	}
 
 	p.names = NewNameDialog()
 	p.chmod = NewChmodDialog()
@@ -365,6 +377,27 @@ func (p *Page) pickUploads() {
 	}()
 }
 
+// pickFolderUpload uploads a folder chosen in the system picker, with
+// everything in it, into the current folder.
+func (p *Page) pickFolderUpload() {
+	fsys, err := p.fs()
+	if err != nil {
+		return
+	}
+	dir, serverID := p.cwd, p.session.Server().ID
+	go func() {
+		local, err := p.env.App.PickFolder(context.Background(), giode.FolderOptions{Title: "Upload a folder to " + dir})
+		if err != nil {
+			return
+		}
+		if err := p.env.Transfers.UploadPath(serverID, fsys, local, dir, p.refreshLater); err != nil {
+			p.env.App.Post(func() { p.env.Fail("Upload "+filepath.Base(local), err) })
+			return
+		}
+		p.env.App.Post(func() { p.env.Info("Uploading " + filepath.Base(local) + " to " + dir) })
+	}()
+}
+
 // HandleDrop uploads files and folders dropped on the window into the
 // current folder.
 func (p *Page) HandleDrop(paths []string) {
@@ -476,7 +509,7 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 			p.toolbar(),
 			widgets.FlushCard(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.card()...),
 		),
-		p.menu, p.names, p.chmod, p.editor,
+		p.menu, p.uploadMenu, p.names, p.chmod, p.editor,
 	).Layout(gtx)
 }
 
@@ -489,7 +522,7 @@ func (p *Page) toolbar() giode.Element {
 			),
 			giode.Row(giode.Styles{Width: -1, Gap: 2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap},
 				giode.Box(giode.Styles{FlexGrow: 1, Width: -1}, p.filter),
-				p.hiddenBtn, p.newFolder, p.newFile, p.uploadIcon,
+				p.hiddenBtn, p.newFolder, p.newFile, p.uploadTool,
 			),
 		)
 	}
@@ -497,7 +530,7 @@ func (p *Page) toolbar() giode.Element {
 		p.backBtn, p.upBtn, p.homeBtn, p.refreshBtn,
 		giode.Box(giode.Styles{FlexGrow: 1, Padding: giode.SymmetricInset(theme.Space2, 0), Overflow: giode.OverflowHidden}, p.crumbs),
 		giode.Box(giode.Styles{Width: 220}, p.filter),
-		p.hiddenBtn, p.newFolder, p.newFile, p.upload,
+		p.hiddenBtn, p.newFolder, p.newFile, p.uploadWide,
 	)
 }
 
