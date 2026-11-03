@@ -9,7 +9,7 @@ import (
 	"gioui.org/unit"
 	"golang.org/x/image/math/fixed"
 
-	"github.com/mehran9675/giode/fonts"
+	"github.com/xmhrnx/giode/fonts"
 )
 
 // cellMetrics is the size of one character cell in pixels.

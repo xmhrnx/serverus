@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/scroll"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/scroll"
 
 	"github.com/xmhrnx/serverus/internal/transfer"
 	"github.com/xmhrnx/serverus/internal/ui/env"

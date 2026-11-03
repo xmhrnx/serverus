@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/drawer"
-	"github.com/mehran9675/giode/components/titlebar"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/drawer"
+	"github.com/xmhrnx/giode/components/titlebar"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/session"

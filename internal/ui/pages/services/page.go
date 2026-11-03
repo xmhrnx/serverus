@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
-	"github.com/mehran9675/giode/components/segmented"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/menu"
+	"github.com/xmhrnx/giode/components/segmented"
 
 	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"

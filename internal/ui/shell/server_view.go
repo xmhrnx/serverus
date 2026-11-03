@@ -4,7 +4,7 @@ import (
 	"slices"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
+	"github.com/xmhrnx/giode"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/session"

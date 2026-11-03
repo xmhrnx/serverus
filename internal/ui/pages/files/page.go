@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/menu"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/menu"
 
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/transport"

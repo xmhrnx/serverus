@@ -15,7 +15,7 @@ import (
 	"gioui.org/unit"
 
 	uv "github.com/charmbracelet/ultraviolet"
-	"github.com/mehran9675/giode/elements"
+	"github.com/xmhrnx/giode/elements"
 )
 
 // View draws a Screen and sends it the user's keystrokes, mouse

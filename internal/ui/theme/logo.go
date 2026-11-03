@@ -5,8 +5,8 @@ import (
 	"image"
 	_ "image/png" // the app icon is a PNG
 
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/styles/properties"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/styles/properties"
 )
 
 var logo image.Image

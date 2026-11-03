@@ -3,9 +3,9 @@ package theme
 import (
 	"io/fs"
 
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/icon"
-	"github.com/mehran9675/giode/styles/properties"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/icon"
+	"github.com/xmhrnx/giode/styles/properties"
 )
 
 // LoadIcons registers the embedded Lucide icons by file name

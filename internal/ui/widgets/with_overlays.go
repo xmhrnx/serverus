@@ -1,6 +1,6 @@
 package widgets
 
-import "github.com/mehran9675/giode"
+import "github.com/xmhrnx/giode"
 
 // WithOverlays places dialogs, menus and other overlays next to content.
 // They take no space there and paint above the window when open, so

@@ -10,7 +10,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/mehran9675/giode"
+	"github.com/xmhrnx/giode"
 
 	"github.com/xmhrnx/serverus/assets"
 	"github.com/xmhrnx/serverus/internal/session"
@@ -70,7 +70,7 @@ func Run() error {
 		CloseToTray:    settings.CloseToTray,
 		// Started at login, wait in the tray rather than open a window.
 		StartInTray: giode.StartInTrayAtLogin,
-		SingleInstanceLock: instanceLock(),
+		SingleInstanceLock: &giode.SingleInstanceLock{UniqueID: AppID},
 		Center:             true,
 		Background:         "theme.background",
 		Icon:               assets.Icon,
@@ -111,16 +111,4 @@ func Run() error {
 
 	root = shell.NewRoot(e, shell.Config{DataDir: dir, Prompts: prompts, Creds: creds, Dialers: dialerWith, Tray: trayIcon})
 	return e.App.Run(func() giode.Element { return root })
-}
-
-// instanceLock makes a second launch on a desktop (from the start menu,
-// while Serverus waits in the tray) bring the running window back. Phones
-// keep a single copy of an app themselves, and Android apps can't create
-// the lock file in the system's temp folder: giode takes that failure
-// for another copy running, and the app would quit at launch.
-func instanceLock() *giode.SingleInstanceLock {
-	if !platform.Desktop {
-		return nil
-	}
-	return &giode.SingleInstanceLock{UniqueID: AppID}
 }

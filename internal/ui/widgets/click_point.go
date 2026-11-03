@@ -2,7 +2,7 @@ package widgets
 
 import (
 	"gioui.org/f32"
-	"github.com/mehran9675/giode"
+	"github.com/xmhrnx/giode"
 )
 
 // ClickPoint is where a click happened in the window, in the form

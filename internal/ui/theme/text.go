@@ -1,6 +1,6 @@
 package theme
 
-import "github.com/mehran9675/giode"
+import "github.com/xmhrnx/giode"
 
 // Text styles for the recurring roles. Merge overrides with With.
 var (

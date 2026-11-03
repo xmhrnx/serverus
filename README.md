@@ -1,8 +1,8 @@
 # Serverus
 
 A cross-platform app for managing remote servers, built with
-[giode](https://github.com/mehran9675/giode) and its
-[CLI](https://github.com/mehran9675/giode-cli). It runs natively (no webview) on Windows,
+[giode](https://github.com/xmhrnx/giode) and its
+[CLI](https://github.com/xmhrnx/giode-cli). It runs natively (no webview) on Windows,
 macOS and Linux, and builds for Android.
 
 ## Features
@@ -82,7 +82,7 @@ Requirements: Go 1.26+, and on Linux Gio's development packages
 (see `giode doctor`).
 
 ```bash
-go install github.com/mehran9675/giode-cli/cmd/giode@latest
+go install github.com/xmhrnx/giode-cli/cmd/giode@latest
 ```
 
 ```bash

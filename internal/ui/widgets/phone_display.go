@@ -1,6 +1,6 @@
 package widgets
 
-import "github.com/mehran9675/giode"
+import "github.com/xmhrnx/giode"
 
 // HiddenOnPhones is a Display value that removes an element on phones
 // (the compact layout) and keeps it elsewhere.

@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/dialog"
-	"github.com/mehran9675/giode/components/input"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/dialog"
+	"github.com/xmhrnx/giode/components/input"
 
 	"github.com/xmhrnx/serverus/internal/transport"
 	"github.com/xmhrnx/serverus/internal/ui/env"

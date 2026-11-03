@@ -2,9 +2,9 @@ package widgets
 
 import (
 	"gioui.org/layout"
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/iconbutton"
-	"github.com/mehran9675/giode/components/tooltip"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/iconbutton"
+	"github.com/xmhrnx/giode/components/tooltip"
 
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 )

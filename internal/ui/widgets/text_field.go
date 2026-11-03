@@ -1,8 +1,8 @@
 package widgets
 
 import (
-	"github.com/mehran9675/giode"
-	"github.com/mehran9675/giode/components/input"
+	"github.com/xmhrnx/giode"
+	"github.com/xmhrnx/giode/components/input"
 
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 )

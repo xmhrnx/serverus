@@ -12,7 +12,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 
-	"github.com/mehran9675/giode/fonts"
+	"github.com/xmhrnx/giode/fonts"
 )
 
 // painter draws a captured frame.

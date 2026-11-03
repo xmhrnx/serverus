@@ -67,16 +67,6 @@ github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 h1:6E+4a0GO5zZEnZ
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0/go.mod h1:zJYVVT2jmtg6P3p1VtQj7WsuWi/y4VnjVBn7F8KPB3I=
 github.com/mattn/go-runewidth v0.0.23 h1:7ykA0T0jkPpzSvMS5i9uoNn2Xy3R383f9HDx3RybWcw=
 github.com/mattn/go-runewidth v0.0.23/go.mod h1:XBkDxAl56ILZc9knddidhrOlY5R/pDhgLpndooCuJAs=
-github.com/mehran9675/giode v0.1.20-alpha.1 h1:vhO8RY51BpcrMTjmpduvry8hI+NR8nwNuTz7TdlAsV0=
-github.com/mehran9675/giode v0.1.20-alpha.1/go.mod h1:Lh6RVGzsMX8csfjxuyjjXPzPPJGilh2lpu4aeDYvBJ8=
-github.com/mehran9675/giode v0.1.21-alpha.1 h1:JEbF1h/aiu/y9D6O0ULJU81pHb5vuQCeJ+uS19xkvls=
-github.com/mehran9675/giode v0.1.21-alpha.1/go.mod h1:Lh6RVGzsMX8csfjxuyjjXPzPPJGilh2lpu4aeDYvBJ8=
-github.com/mehran9675/giode v0.1.22-alpha.1 h1:cIPfMmJlnqSRpcjxw2tpJ5Fdsovx+nH/ahPWhPbNgyo=
-github.com/mehran9675/giode v0.1.22-alpha.1/go.mod h1:Lh6RVGzsMX8csfjxuyjjXPzPPJGilh2lpu4aeDYvBJ8=
-github.com/mehran9675/giode v0.1.23-alpha.1 h1:QX3xRAxZRW1QvmaVoGWQjuF4F/sYdfWwr9vi5P9jJ74=
-github.com/mehran9675/giode v0.1.23-alpha.1/go.mod h1:Lh6RVGzsMX8csfjxuyjjXPzPPJGilh2lpu4aeDYvBJ8=
-github.com/mehran9675/giode v0.1.25-alpha.1 h1:R66nsXFwL1+hg2CP+YyxsOGFZQCibAbSxMp2cV+3pcY=
-github.com/mehran9675/giode v0.1.25-alpha.1/go.mod h1:Lh6RVGzsMX8csfjxuyjjXPzPPJGilh2lpu4aeDYvBJ8=
 github.com/muesli/cancelreader v0.2.2 h1:3I4Kt4BQjOR54NavqnDogx/MIoWBFa0StPA8ELUXHmA=
 github.com/muesli/cancelreader v0.2.2/go.mod h1:3XuTXfFS2VjM+HTLZY9Ak0l6eUKfijIfMUZ4EgX0QYo=
 github.com/pkg/sftp v1.13.12 h1:Myhzy/ZzLPnCtE2F2WtDHsgs8RfgMnH2gfbHuCJhkMU=
@@ -99,6 +89,8 @@ github.com/u-root/gobusybox/src v0.0.0-20250101170133-2e884e4509c7 h1:dtiVT4SeBU
 github.com/u-root/gobusybox/src v0.0.0-20250101170133-2e884e4509c7/go.mod h1:PW3wGFCHjdHxAhra5FKvcARbCGqGfentYuPKmuhv8DY=
 github.com/u-root/u-root v0.16.0 h1:wY40O83MBVks97+Is0WlFlOPSwKQMIrWP9R1IsrExg8=
 github.com/u-root/u-root v0.16.0/go.mod h1:yL/XdSSW27PdGLgUh4MNRBy54mKM+TBLzpwiB4nwj90=
+github.com/xmhrnx/giode v0.1.30-alpha.1 h1:lSAf/Lo0EHJgSCKJb9qMuMwYhXocw1Yrpz4X2aUClR4=
+github.com/xmhrnx/giode v0.1.30-alpha.1/go.mod h1:88XFQNpZw806ytdMrkUB2znIFm+n4OMxJBzKlRe5d5A=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
 github.com/yuin/goldmark v1.4.13 h1:fVcFKWvrslecOb/tg+Cc05dkeYx540o0FuFt3nUVDoE=
