@@ -69,7 +69,7 @@ func Run() error {
 		MinimizeToTray: settings.MinimizeToTray,
 		CloseToTray:    settings.CloseToTray,
 		// Started at login, wait in the tray rather than open a window.
-		StartInTray: giode.StartInTrayAtLogin,
+		StartInTray:        giode.StartInTrayAtLogin,
 		SingleInstanceLock: &giode.SingleInstanceLock{UniqueID: AppID},
 		Center:             true,
 		Background:         "theme.background",
