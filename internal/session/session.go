@@ -17,6 +17,10 @@ import (
 type Hooks struct {
 	OnConnect    func(s *Session)
 	OnDisconnect func(s *Session, err error)
+	// SudoPassword asks for the password sudo wants on s's server;
+	// retry is set after a wrong one. It's called off the UI goroutine
+	// and may block until the user answers.
+	SudoPassword func(s *Session, retry bool) (string, bool)
 }
 
 // Session is the connection to one server.
@@ -36,6 +40,9 @@ type Session struct {
 	connectedAt time.Time
 	cancel      context.CancelFunc
 	generation  int
+
+	sudoMu       sync.Mutex
+	sudoPassword string
 }
 
 // Server returns the server's current configuration.
@@ -135,6 +142,7 @@ func (s *Session) watch(ctx context.Context, gen int, conn transport.Conn) {
 		err = nil
 	}
 	s.mu.Unlock()
+	s.forgetSudo()
 	s.notify()
 	if s.hooks.OnDisconnect != nil {
 		s.hooks.OnDisconnect(s, err)
@@ -156,6 +164,7 @@ func (s *Session) Disconnect() {
 	if conn != nil {
 		conn.Close()
 	}
+	s.forgetSudo()
 	s.notify()
 	if wasUp && s.hooks.OnDisconnect != nil {
 		s.hooks.OnDisconnect(s, nil)
@@ -290,10 +299,14 @@ func (s *Session) Executor() (transport.Executor, error) {
 	if err != nil {
 		return nil, err
 	}
-	if e, ok := c.(transport.Executor); ok {
-		return e, nil
+	e, ok := c.(transport.Executor)
+	if !ok {
+		return nil, transport.ErrUnsupported
 	}
-	return nil, transport.ErrUnsupported
+	if in, ok := c.(transport.InputRunner); ok && s.hooks.SudoPassword != nil {
+		return sudoExecutor{run: e, in: in, s: s}, nil
+	}
+	return e, nil
 }
 
 // FileSystem returns the connection's file system.

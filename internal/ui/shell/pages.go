@@ -1,6 +1,10 @@
 package shell
 
-import "github.com/xmhrnx/serverus/internal/domain"
+import (
+	"runtime"
+
+	"github.com/xmhrnx/serverus/internal/domain"
+)
 
 // PageKind identifies a page of the server workspace.
 type PageKind int
@@ -11,6 +15,7 @@ const (
 	PageFiles
 	PageProcesses
 	PageServices
+	PageDrives
 	PageDocker
 	PageTunnels
 	PageSnippets
@@ -22,17 +27,21 @@ type pageSpec struct {
 	label string
 	icon  string
 	needs domain.Capability
+	// localOK is false for pages that manage only remote (Linux)
+	// servers unless this computer runs Linux too.
+	localOK bool
 }
 
 var pageSpecs = []pageSpec{
-	{PageOverview, "Overview", "gauge", domain.CapExec},
-	{PageTerminal, "Terminal", "terminal", domain.CapTerminal},
-	{PageFiles, "Files", "folder", domain.CapFiles},
-	{PageProcesses, "Processes", "activity", domain.CapExec},
-	{PageServices, "Services", "layers", domain.CapExec},
-	{PageDocker, "Docker", "container", domain.CapExec},
-	{PageTunnels, "Tunnels", "cable", domain.CapForward},
-	{PageSnippets, "Snippets", "scroll-text", domain.CapExec},
+	{PageOverview, "Overview", "gauge", domain.CapExec, true},
+	{PageTerminal, "Terminal", "terminal", domain.CapTerminal, true},
+	{PageFiles, "Files", "folder", domain.CapFiles, true},
+	{PageProcesses, "Processes", "activity", domain.CapExec, true},
+	{PageServices, "Services", "layers", domain.CapExec, true},
+	{PageDrives, "Drives", "hard-drive", domain.CapExec, runtime.GOOS == "linux"},
+	{PageDocker, "Docker", "container", domain.CapExec, true},
+	{PageTunnels, "Tunnels", "cable", domain.CapForward, true},
+	{PageSnippets, "Snippets", "scroll-text", domain.CapExec, true},
 }
 
 // availablePages lists the pages a protocol supports.
@@ -40,7 +49,7 @@ func availablePages(p domain.Protocol) []pageSpec {
 	caps := p.Capabilities()
 	var out []pageSpec
 	for _, s := range pageSpecs {
-		if caps.Has(s.needs) {
+		if caps.Has(s.needs) && (s.localOK || p != domain.ProtocolLocal) {
 			out = append(out, s)
 		}
 	}

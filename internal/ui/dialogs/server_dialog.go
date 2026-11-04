@@ -45,7 +45,7 @@ type ServerDialog struct {
 
 	name, group, host, port, user *input.Input
 	password, keyPath, passphrase *input.Input
-	tags, notes                   *input.Input
+	tags, notes, mac              *input.Input
 	protocol                      *segmented.Control
 	auth                          *segmented.Control
 	ftps                          *toggle.Switch
@@ -71,6 +71,7 @@ func NewServerDialog(e *env.Env, creds transport.Credentials, dialers DialerFact
 	d.keyPath = widgets.CodeField("~/.ssh/id_ed25519")
 	d.passphrase = widgets.TextField("Leave empty if the key has none").Password(true)
 	d.tags = widgets.TextField("web, eu-west, critical")
+	d.mac = widgets.CodeField("Learned when you first connect over SSH")
 	d.notes = widgets.TextField("Anything worth remembering about this server").Lines(3, 6)
 
 	labels := make([]string, len(domain.Protocols))
@@ -127,6 +128,7 @@ func (d *ServerDialog) load(s domain.Server, isNew bool) {
 	d.passphrase.SetText("")
 	d.keyPath.SetText(s.KeyPath)
 	d.tags.SetText(strings.Join(s.Tags, ", "))
+	d.mac.SetText(s.MAC)
 	d.notes.SetText(s.Notes)
 	d.protocol.SetSelected(max(0, slices.Index(domain.Protocols, s.Protocol)))
 	d.auth.SetSelected(max(0, slices.Index(domain.AuthMethods, s.Auth)))
@@ -201,6 +203,7 @@ func (d *ServerDialog) collect() (domain.Server, error) {
 	s.FTPSecure = d.ftps.Checked()
 	s.Accent = d.accent.Value()
 	s.Notes = strings.TrimSpace(d.notes.Text())
+	s.MAC = strings.ToLower(strings.TrimSpace(d.mac.Text()))
 	s.Tags = nil
 	for _, t := range strings.Split(d.tags.Text(), ",") {
 		if t = strings.TrimSpace(t); t != "" {
@@ -214,7 +217,7 @@ func (d *ServerDialog) collect() (domain.Server, error) {
 		}
 	}
 	if !s.Protocol.NeedsHost() {
-		s.Host, s.Port, s.Username = "", 0, ""
+		s.Host, s.Port, s.Username, s.MAC = "", 0, "", ""
 	}
 	if s.CreatedAt.IsZero() {
 		s.CreatedAt = time.Now()
@@ -356,6 +359,9 @@ func (d *ServerDialog) form() giode.Element {
 	}
 	if p == domain.ProtocolFTP {
 		rows = append(rows, widgets.FormField("Password", "Stored in the system keychain", d.password), d.ftps)
+	}
+	if p.NeedsHost() {
+		rows = append(rows, widgets.FormField("MAC address", "Wakes the server with Wake-on-LAN after it's shut down", d.mac))
 	}
 	rows = append(rows,
 		widgets.FormField("Color", "", d.accent),

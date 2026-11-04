@@ -44,6 +44,13 @@ type Executor interface {
 	Run(ctx context.Context, command string) (Output, error)
 }
 
+// InputRunner runs a command with stdin fed from input, for answers a
+// command reads (a sudo password) without putting them on its command
+// line.
+type InputRunner interface {
+	RunInput(ctx context.Context, command string, input []byte) (Output, error)
+}
+
 // Output is a finished command's result.
 type Output struct {
 	Stdout   []byte

@@ -14,15 +14,17 @@ import (
 // a connect prompt, progress, or what went wrong with a retry.
 type ConnectionPanel struct {
 	sess    *session.Session
+	power   *PowerControl
 	connect *giode.ButtonElement
 	retry   *giode.ButtonElement
 	edit    *giode.ButtonElement
 }
 
 // NewConnectionPanel returns the panel for sess.
-func NewConnectionPanel(sess *session.Session, onEdit func()) *ConnectionPanel {
+func NewConnectionPanel(sess *session.Session, power *PowerControl, onEdit func()) *ConnectionPanel {
 	return &ConnectionPanel{
 		sess:    sess,
+		power:   power,
 		connect: widgets.Button(widgets.Primary, "Connect", "plug").OnClick(sess.Connect),
 		retry:   widgets.Button(widgets.Primary, "Try again", "rotate-cw").OnClick(sess.Reconnect),
 		edit:    widgets.Button(widgets.Secondary, "Edit server", "pencil").OnClick(onEdit),
@@ -41,7 +43,16 @@ func (c *ConnectionPanel) Layout(gtx layout.Context) layout.Dimensions {
 		if err != nil {
 			msg = format.Sentence(transport.Explain(err).Error())
 		}
-		return widgets.EmptyState("unplug", "Couldn't connect", msg, c.retry, c.edit).Layout(gtx)
+		return widgets.EmptyState("unplug", "Couldn't connect", msg, c.withWake(c.retry, c.edit)...).Layout(gtx)
 	}
-	return widgets.EmptyState("plug", "Not connected", "Connect to "+s.Name+" to monitor it, open terminals and manage its files.", c.connect).Layout(gtx)
+	return widgets.EmptyState("plug", "Not connected", "Connect to "+s.Name+" to monitor it, open terminals and manage its files.", c.withWake(c.connect)...).Layout(gtx)
+}
+
+// withWake adds the Wake-on-LAN button to actions when the server has a
+// MAC address.
+func (c *ConnectionPanel) withWake(actions ...giode.Element) []giode.Element {
+	if w := c.power.WakeButton(); w != nil {
+		actions = append(actions, w)
+	}
+	return actions
 }

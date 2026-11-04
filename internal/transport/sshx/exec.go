@@ -14,6 +14,11 @@ import (
 // Run executes command in a new session. A non-zero exit status is
 // reported in Output.ExitCode, not as an error.
 func (c *Conn) Run(ctx context.Context, command string) (transport.Output, error) {
+	return c.RunInput(ctx, command, nil)
+}
+
+// RunInput is Run with input on the command's stdin.
+func (c *Conn) RunInput(ctx context.Context, command string, input []byte) (transport.Output, error) {
 	s, err := c.client.NewSession()
 	if err != nil {
 		return transport.Output{}, err
@@ -21,6 +26,9 @@ func (c *Conn) Run(ctx context.Context, command string) (transport.Output, error
 	defer s.Close()
 	var stdout, stderr bytes.Buffer
 	s.Stdout, s.Stderr = &stdout, &stderr
+	if input != nil {
+		s.Stdin = bytes.NewReader(input)
+	}
 
 	start := time.Now()
 	done := make(chan error, 1)

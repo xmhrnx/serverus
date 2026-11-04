@@ -261,7 +261,7 @@ func (r *Root) registerShortcuts() {
 	}
 	if v, ok := r.views[r.selected]; ok && !r.showSettings {
 		list = append(list, giode.Shortcut(shortcuts.NewTerminal, v.NewTerminalTab))
-		for n := 1; n <= 8; n++ {
+		for n := 1; n <= 9; n++ {
 			n := n
 			list = append(list, giode.Shortcut(fmt.Sprintf("%s%d", shortcuts.Page, n), func() { v.ShowNth(n) }))
 		}

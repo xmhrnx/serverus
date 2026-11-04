@@ -4,10 +4,12 @@
 package env
 
 import (
+	"errors"
 	"time"
 
 	"github.com/xmhrnx/giode"
 
+	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/storage"
 	"github.com/xmhrnx/serverus/internal/transfer"
@@ -77,7 +79,7 @@ func (e *Env) Info(msg string) { e.Toasts.Show(giode.ToastInfo, msg) }
 
 // Fail shows an error toast prefixed with what failed.
 func (e *Env) Fail(what string, err error) {
-	if err == nil {
+	if err == nil || errors.Is(err, ops.ErrCanceled) {
 		return
 	}
 	e.Toasts.Show(giode.ToastError, what+": "+err.Error())

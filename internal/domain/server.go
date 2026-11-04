@@ -26,6 +26,9 @@ type Server struct {
 	JumpHostID string `json:"jumpHostId,omitempty"`
 	// FTPSecure upgrades FTP connections with explicit TLS (FTPS).
 	FTPSecure bool `json:"ftpSecure,omitempty"`
+	// MAC is the server's network card address, for waking it with
+	// Wake-on-LAN. It's learned on the first SSH connection.
+	MAC string `json:"mac,omitempty"`
 
 	// Accent is the color of the server's avatar in the sidebar.
 	Accent    string    `json:"accent,omitempty"`
@@ -86,5 +89,13 @@ func (s Server) Validate() error {
 	if s.Protocol == ProtocolSSH && s.Auth == AuthKey && strings.TrimSpace(s.KeyPath) == "" {
 		return fmt.Errorf("choose the private key file")
 	}
+	if s.MAC != "" {
+		if _, err := net.ParseMAC(s.MAC); err != nil {
+			return fmt.Errorf("the MAC address should look like 00:1a:2b:3c:4d:5e")
+		}
+	}
 	return nil
 }
+
+// CanWake reports whether the server can be woken with Wake-on-LAN.
+func (s Server) CanWake() bool { return s.MAC != "" && s.Protocol.NeedsHost() }

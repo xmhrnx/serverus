@@ -9,7 +9,7 @@ macOS and Linux, and builds for Android.
 
 **Servers**
 - Any number of servers in a searchable sidebar, grouped, with tags, colors and live
-  connection status. Right-click a server to connect, reconnect, disconnect, edit,
+  connection status. Right-click a server to connect, reconnect, disconnect, wake, edit,
   duplicate or delete it.
 - Connection types:
   - **SSH**: password, private key (with passphrase) or SSH agent (ssh-agent, the Windows
@@ -44,9 +44,11 @@ macOS and Linux, and builds for Android.
 
 **Files** (SFTP, FTP or local)
 - Browse with breadcrumbs, back/up/home, filter, sorting, and hidden files on or off.
-- Upload with the file picker or by **dropping files and folders on the window**;
-  download files or whole folders. Transfers run in the background, three at a time,
-  with progress, speed and cancel in the Transfers panel.
+- Upload files or a whole folder with the picker, or by **dropping files and folders on
+  the window**; download files or whole folders. Transfers run in the background (three
+  at a time by default, set in Settings), with progress, speed and cancel in the
+  Transfers panel. SFTP keeps many requests in flight, so transfers run at the speed of
+  the network.
 - Edit text files in place, create files and folders, rename, change permissions,
   delete, and copy paths.
 
@@ -57,7 +59,19 @@ macOS and Linux, and builds for Android.
   enable/disable at boot; logs (`journalctl`) and status.
 - **Docker**: containers with state, ports and live CPU/memory; start, stop, restart,
   pause, remove; logs.
-- Privileged actions use `sudo -n` when the user isn't root.
+- **Power**: restart or shut down now, schedule a shutdown or restart (shown in the
+  header until it happens) and cancel it. Servers are woken again with **Wake-on-LAN**;
+  their MAC address is learned on the first SSH connection.
+- **Drives** (Linux): see the disks plugged in, with their volumes, file systems and
+  free space; mount, unmount and open them in Files, and eject a USB drive so it can be
+  unplugged, without typing commands. udisks is used when it's there, `mount` as root
+  otherwise.
+- Privileged actions run as root through sudo; when sudo wants a password, Serverus asks
+  for it once and keeps it until you disconnect.
+
+**Appearance**
+- Dark and light themes, or follow the system. The background tone (emerald, graphite,
+  midnight, plum, black) and the accent color are chosen in Settings.
 
 **Tunnels**
 - Local port forwarding through any SSH server (`ssh -L`), opened by hand or

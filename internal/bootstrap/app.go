@@ -106,7 +106,7 @@ func Run() error {
 	e.Sessions = session.NewManager(dialerWith(creds), func() {
 		e.App.Invalidate()
 		trayIcon.Sync()
-	}, e.MetricsInterval, sessionHooks(e))
+	}, e.MetricsInterval, sessionHooks(e, prompts.Secret))
 	trayIcon = tray.Install(e, assets.TrayIcon, assets.TrayTemplate)
 
 	root = shell.NewRoot(e, shell.Config{DataDir: dir, Prompts: prompts, Creds: creds, Dialers: dialerWith, Tray: trayIcon})

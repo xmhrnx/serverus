@@ -14,6 +14,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
+	"github.com/xmhrnx/serverus/internal/wol"
 )
 
 // SidebarActions are what the sidebar asks the shell to do.
@@ -63,12 +64,28 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		IconItem(theme.IconSource("plug"), "Connect", func() { s.env.Sessions.Get(s.target).Connect() }).
 		IconItem(theme.IconSource("rotate-cw"), "Reconnect", func() { s.env.Sessions.Get(s.target).Reconnect() }).
 		IconItem(theme.IconSource("unplug"), "Disconnect", func() { s.env.Sessions.Get(s.target).Disconnect() }).
+		IconItem(theme.IconSource("sunrise"), "Wake up", func() { s.wake(s.target) }).
 		Separator().
 		IconItem(theme.IconSource("pencil"), "Edit…", func() { actions.Edit(s.target) }).
 		IconItem(theme.IconSource("copy"), "Duplicate…", func() { actions.Duplicate(s.target) }).
 		Separator().
 		IconItem(theme.IconSource("trash-2"), "Delete", func() { actions.Delete(s.target) })
 	return s
+}
+
+// wake sends srv a Wake-on-LAN packet.
+func (s *Sidebar) wake(srv domain.Server) {
+	if !srv.CanWake() {
+		s.env.Info("Add " + srv.Name + "'s MAC address in Edit to wake it; it's filled in after an SSH connection")
+		return
+	}
+	s.env.Async(func() error { return wol.Wake(srv.MAC, srv.Host) }, func(err error) {
+		if err != nil {
+			s.env.Fail("Wake "+srv.Name, err)
+			return
+		}
+		s.env.Info("Sent the wake-up call to " + srv.Name)
+	})
 }
 
 // FocusSearch puts the keyboard in the search field.

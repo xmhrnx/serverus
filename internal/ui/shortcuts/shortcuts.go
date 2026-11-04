@@ -9,7 +9,7 @@ const (
 	AddServer   = "Mod+N"
 	Settings    = "Mod+,"
 	NewTerminal = "Mod+Shift+T"
-	// Page is Mod plus the page's position in the tab row, 1 to 8.
+	// Page is Mod plus the page's position in the tab row, 1 to 9.
 	Page = "Mod+"
 )
 
@@ -25,5 +25,5 @@ var Help = []Entry{
 	{AddServer, "Add a server"},
 	{Settings, "Open the settings"},
 	{NewTerminal, "Open a terminal tab on the server"},
-	{Page + "1", "Go to the server's first page; 2 to 8 for the others"},
+	{Page + "1", "Go to the server's first page; 2 to 9 for the others"},
 }

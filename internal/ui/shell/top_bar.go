@@ -17,6 +17,7 @@ import (
 // is doing, and the connect and edit actions.
 type TopBar struct {
 	sess       *session.Session
+	power      *PowerControl
 	connect    *giode.ButtonElement
 	disconnect *giode.ButtonElement
 	edit       *widgets.ToolButton
@@ -26,9 +27,10 @@ type TopBar struct {
 }
 
 // NewTopBar returns the header for sess; onEdit opens the editor.
-func NewTopBar(sess *session.Session, onEdit func()) *TopBar {
+func NewTopBar(sess *session.Session, power *PowerControl, onEdit func()) *TopBar {
 	return &TopBar{
 		sess:       sess,
+		power:      power,
 		connect:    widgets.Button(widgets.Primary, "Connect", "plug").OnClick(sess.Connect),
 		disconnect: widgets.Button(widgets.Secondary, "Disconnect", "unplug").OnClick(sess.Disconnect),
 		edit:       widgets.NewToolButton("pencil", "Edit server", onEdit),
@@ -54,6 +56,9 @@ func (t *TopBar) Layout(gtx layout.Context) layout.Dimensions {
 			meta = append(meta, giode.Text(format.Latency(lat), theme.Caption.With(giode.Styles{FontFamily: theme.Mono})))
 		}
 		meta = append(meta, giode.Text(fmt.Sprintf("connected %s", format.Ago(t.sess.ConnectedAt())), theme.Caption))
+	}
+	if pill := t.power.Pill(); pill != nil && st == session.Connected {
+		meta = append(meta, pill)
 	}
 	for _, tag := range s.Tags {
 		meta = append(meta, widgets.Pill(tag, theme.Primary))
@@ -81,9 +86,20 @@ func (t *TopBar) Layout(gtx layout.Context) layout.Dimensions {
 			),
 			giode.Row(giode.Styles{Gap: theme.Space2, Align: giode.AlignCenter}, meta...),
 		),
-		t.edit,
+		t.tools(st),
 		action,
 	).Layout(gtx)
+}
+
+// tools are the icon actions beside the connect button: power, while
+// connected to a server that runs commands, and edit.
+func (t *TopBar) tools(st session.State) giode.Element {
+	items := []giode.Element{}
+	if st == session.Connected && t.sess.Capabilities().Has(domain.CapExec) {
+		items = append(items, t.power.Trigger())
+	}
+	items = append(items, t.edit)
+	return giode.Row(giode.Styles{Gap: 2, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap}, items...)
 }
 
 // compact is the header on phones: one line of name and status, the
@@ -110,7 +126,7 @@ func (t *TopBar) compact(s domain.Server, st session.State, status giode.Element
 				giode.Box(giode.Styles{FlexGrow: 1}, giode.Text(s.Subtitle(), theme.Caption.With(giode.Styles{MaxLines: 1, TextOverflow: giode.TextOverflowEllipsis}))),
 			),
 		),
-		t.edit,
+		t.tools(st),
 		action,
 	)
 }

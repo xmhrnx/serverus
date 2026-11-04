@@ -10,6 +10,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/pages/docker"
+	"github.com/xmhrnx/serverus/internal/ui/pages/drives"
 	"github.com/xmhrnx/serverus/internal/ui/pages/files"
 	"github.com/xmhrnx/serverus/internal/ui/pages/overview"
 	"github.com/xmhrnx/serverus/internal/ui/pages/processes"
@@ -17,6 +18,7 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/pages/snippets"
 	"github.com/xmhrnx/serverus/internal/ui/pages/terminal"
 	"github.com/xmhrnx/serverus/internal/ui/pages/tunnels"
+	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // ServerView is the workspace of one server: its header, page tabs and
@@ -28,6 +30,7 @@ type ServerView struct {
 	active PageKind
 
 	topbar *TopBar
+	power  *PowerControl
 	nav    *NavTabs
 	panel  *ConnectionPanel
 	pages  map[PageKind]giode.Element
@@ -40,9 +43,10 @@ type ServerView struct {
 // server editor.
 func NewServerView(e *env.Env, sess *session.Session, onEdit func()) *ServerView {
 	v := &ServerView{env: e, sess: sess, pages: map[PageKind]giode.Element{}}
-	v.topbar = NewTopBar(sess, onEdit)
+	v.power = NewPowerControl(e, sess)
+	v.topbar = NewTopBar(sess, v.power, onEdit)
 	v.nav = NewNavTabs(func() PageKind { return v.active }, v.Show)
-	v.panel = NewConnectionPanel(sess, onEdit)
+	v.panel = NewConnectionPanel(sess, v.power, onEdit)
 	if specs := availablePages(sess.Server().Protocol); len(specs) > 0 {
 		v.active = specs[0].kind
 	}
@@ -71,6 +75,8 @@ func (v *ServerView) page(k PageKind) giode.Element {
 		p = processes.New(v.env, v.sess)
 	case PageServices:
 		p = services.New(v.env, v.sess)
+	case PageDrives:
+		p = drives.New(v.env, v.sess, v.openFolder)
 	case PageDocker:
 		p = docker.New(v.env, v.sess)
 	case PageTunnels:
@@ -101,6 +107,13 @@ func (v *ServerView) NewTerminalTab() {
 	v.active = PageTerminal
 	v.page(PageTerminal)
 	v.terminal.NewTab()
+}
+
+// openFolder shows dir in the file manager.
+func (v *ServerView) openFolder(dir string) {
+	v.active = PageFiles
+	v.page(PageFiles)
+	v.files.Navigate(dir)
 }
 
 // typeInTerminal switches to the terminal and types text into it.
@@ -140,9 +153,9 @@ func (v *ServerView) Layout(gtx layout.Context) layout.Dimensions {
 	if st, _ := v.sess.State(); st == session.Connected {
 		body = v.page(v.active)
 	}
-	return giode.Stack(giode.Styles{Width: -1, Height: -1},
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1},
 		v.topbar,
 		v.nav,
 		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, body),
-	).Layout(gtx)
+	), v.power.Overlays()...).Layout(gtx)
 }

@@ -131,6 +131,9 @@ func (p *Page) fs() (transport.FileSystem, error) { return p.session.FileSystem(
 
 func (p *Page) pathOf(f transport.FileInfo) string { return transport.Join(p.cwd, f.Name) }
 
+// Navigate opens dir, from another page (a drive's mount point).
+func (p *Page) Navigate(dir string) { p.navigate(dir) }
+
 // navigate opens dir, remembering the current one for Back.
 func (p *Page) navigate(dir string) {
 	if dir == p.cwd {
