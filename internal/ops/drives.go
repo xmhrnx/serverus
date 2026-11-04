@@ -192,12 +192,12 @@ func (d Drives) mount(ctx context.Context, v Volume, dir string) error {
 // folder when Mount made it under /mnt; folders the user chose are kept.
 // It succeeds only once the volume is mounted nowhere.
 func (d Drives) Unmount(ctx context.Context, v Volume) error {
-	_, err := run(ctx, d.Exec, "udisksctl unmount --no-user-interaction -b "+Quote(v.Path))
-	if err != nil && !udisksUnavailable(err) && !notMountedByUdisks(err) {
-		return friendlyBusy(err)
-	}
-	// udisks unmounts one mount; a volume can be mounted in several
-	// places (by the desktop and by fstab, or twice by hand).
+	// udisks unmounts what it mounted without root. Whatever it can't,
+	// or doesn't, is unmounted below as root, which also reports the
+	// real reason (busy) when that fails too.
+	_, _ = run(ctx, d.Exec, "udisksctl unmount --no-user-interaction -b "+Quote(v.Path))
+	// A volume can be mounted in several places (by the desktop and by
+	// fstab, or twice by hand).
 	for range 8 {
 		targets, err := d.mountPoints(ctx, v.Path)
 		if err != nil {
@@ -212,18 +212,14 @@ func (d Drives) Unmount(ctx context.Context, v Volume) error {
 			cmd += " && { rmdir " + Quote(target) + " 2>/dev/null; true; }"
 		}
 		if _, err := runPrivileged(ctx, d.Exec, cmd); err != nil {
-			return friendlyBusy(err)
+			if isBusy(err) {
+				return d.busyError(ctx, v, targets)
+			}
+			return err
 		}
 	}
 	targets, _ := d.mountPoints(ctx, v.Path)
 	return fmt.Errorf("%s is still mounted at %s", v.Title(), strings.Join(targets, ", "))
-}
-
-// notMountedByUdisks reports udisks refusing because it didn't mount
-// the volume, or because it isn't mounted where udisks looks.
-func notMountedByUdisks(err error) bool {
-	m := strings.ToLower(err.Error())
-	return strings.Contains(m, "not mounted") || strings.Contains(m, "notmounted")
 }
 
 // mountPoints lists the folders the device at dev is mounted on, oldest
@@ -294,13 +290,6 @@ func udisksUnavailable(err error) bool {
 	return ce.ExitCode == 127 || strings.Contains(m, "not found") || strings.Contains(m, "not authorized") ||
 		strings.Contains(m, "notauthorized") || strings.Contains(m, "serviceunknown") || strings.Contains(m, "cannot autolaunch") ||
 		strings.Contains(m, "no such interface") || strings.Contains(m, "error connecting")
-}
-
-func friendlyBusy(err error) error {
-	if err != nil && strings.Contains(strings.ToLower(err.Error()), "busy") {
-		return errors.New("the drive is in use: close the files and terminals using it, then try again")
-	}
-	return err
 }
 
 // mountName is a folder name for v: its label, made safe, or its device

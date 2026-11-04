@@ -39,6 +39,7 @@ type Page struct {
 	cards   *giode.KeyedCache[string, *DriveCard]
 	volRows *giode.KeyedCache[string, *VolumeRow]
 	mountTo *MountDialog
+	inUse   *BusyDialog
 }
 
 // New returns the drives page for s; openDir shows a folder in the
@@ -51,6 +52,7 @@ func New(e *env.Env, s *session.Session, openDir func(string)) *Page {
 	p.cards = giode.NewKeyedCache[string, *DriveCard]()
 	p.volRows = giode.NewKeyedCache[string, *VolumeRow]()
 	p.mountTo = NewMountDialog(p.mountAt)
+	p.inUse = NewBusyDialog(p.stopUsersAndUnmount, p.unmountLazily)
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	return p
 }
@@ -102,7 +104,10 @@ func (p *Page) act(key, what string, work func(context.Context, ops.Drives) (str
 		return err
 	}, func(err error) {
 		delete(p.busy, key)
-		if err != nil {
+		var inUse *ops.BusyError
+		if errors.As(err, &inUse) {
+			p.inUse.Show(inUse)
+		} else if err != nil {
 			p.env.Fail(what, err)
 		} else if msg != "" {
 			p.env.Success(msg)
@@ -157,6 +162,23 @@ func (p *Page) Unmount(v ops.Volume) {
 	})
 }
 
+// stopUsersAndUnmount ends the programs keeping b's volume busy, then
+// unmounts it.
+func (p *Page) stopUsersAndUnmount(b *ops.BusyError) {
+	v := b.Volume
+	p.act(v.Path, "Unmount "+v.Title(), func(ctx context.Context, d ops.Drives) (string, error) {
+		return v.Title() + " is unmounted", d.StopUsersAndUnmount(ctx, v, b.Users)
+	})
+}
+
+// unmountLazily detaches b's volume while programs still use it.
+func (p *Page) unmountLazily(b *ops.BusyError) {
+	v := b.Volume
+	p.act(v.Path, "Unmount "+v.Title(), func(ctx context.Context, d ops.Drives) (string, error) {
+		return v.Title() + " is detached; it finishes unmounting when the programs let go", d.UnmountLazily(ctx, v)
+	})
+}
+
 // Eject unmounts every volume of drv and powers it off.
 func (p *Page) Eject(drv ops.Drive) {
 	p.env.Confirm(env.Confirmation{
@@ -193,7 +215,7 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
 		p.toolbar(),
 		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.scroll),
-	), p.mountTo).Layout(gtx)
+	), p.mountTo, p.inUse).Layout(gtx)
 }
 
 func (p *Page) toolbar() giode.Element {
