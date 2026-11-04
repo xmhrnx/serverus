@@ -139,3 +139,66 @@ func TestCheckMountDir(t *testing.T) {
 		}
 	}
 }
+
+// fakeMounts is a server where /dev/sdb1 is mounted on mounts, udisks
+// is missing and umount needs root.
+type fakeMounts struct {
+	mounts []string
+	ran    []string
+}
+
+func (f *fakeMounts) Run(_ context.Context, cmd string) (transport.Output, error) {
+	f.ran = append(f.ran, cmd)
+	switch {
+	case strings.HasPrefix(cmd, "udisksctl"):
+		return transport.Output{ExitCode: 127, Stderr: []byte("udisksctl: not found")}, nil
+	case strings.HasPrefix(cmd, "sh -c") && strings.Contains(cmd, "/proc/mounts"):
+		return transport.Output{Stdout: []byte(strings.Join(f.mounts, "\n"))}, nil
+	case strings.HasPrefix(cmd, "umount"):
+		return transport.Output{ExitCode: 32, Stderr: []byte("umount: must be superuser to use umount.")}, nil
+	case strings.HasPrefix(cmd, "sudo -n sh -c 'umount "):
+		if len(f.mounts) > 0 {
+			f.mounts = f.mounts[:len(f.mounts)-1]
+		}
+		return transport.Output{}, nil
+	}
+	return transport.Output{ExitCode: 1, Stderr: []byte("unexpected " + cmd)}, nil
+}
+
+func TestUnmountEveryMount(t *testing.T) {
+	f := &fakeMounts{mounts: []string{`/media/pi/My\040Stick`, "/mnt/data"}}
+	v := Volume{Name: "sdb1", Path: "/dev/sdb1", Label: "My Stick", MountPoint: "/media/pi/My Stick"}
+	if err := (Drives{Exec: f}).Unmount(context.Background(), v); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.mounts) != 0 {
+		t.Fatalf("still mounted on %v", f.mounts)
+	}
+	var umounts []string
+	for _, c := range f.ran {
+		if strings.HasPrefix(c, "sudo -n") {
+			umounts = append(umounts, c)
+		}
+	}
+	if len(umounts) != 2 || !strings.Contains(umounts[0], "/mnt/data") || !strings.Contains(umounts[1], "/media/pi/My Stick") {
+		t.Errorf("unmounted %v", umounts)
+	}
+}
+
+// stuckMounts never lets go.
+type stuckMounts struct{ fakeMounts }
+
+func (s *stuckMounts) Run(ctx context.Context, cmd string) (transport.Output, error) {
+	if strings.HasPrefix(cmd, "sudo -n sh -c 'umount ") {
+		return transport.Output{}, nil // claims success, stays mounted
+	}
+	return s.fakeMounts.Run(ctx, cmd)
+}
+
+func TestUnmountReportsWhatStaysMounted(t *testing.T) {
+	s := &stuckMounts{fakeMounts{mounts: []string{"/srv/disk"}}}
+	err := (Drives{Exec: s}).Unmount(context.Background(), Volume{Name: "sdb1", Path: "/dev/sdb1"})
+	if err == nil || !strings.Contains(err.Error(), "still mounted at /srv/disk") {
+		t.Fatalf("got %v", err)
+	}
+}
