@@ -101,7 +101,15 @@ func resultError(command string, out transport.Output) error {
 		msg = strings.TrimSpace(string(out.Stdout))
 	}
 	if msg == "" {
-		msg = fmt.Sprintf("exit status %d", out.ExitCode)
+		name := strings.Fields(command)
+		if len(name) > 0 && name[0] == "sudo" && len(name) > 3 {
+			name = name[len(name)-1:] // the quoted command sudo ran
+		}
+		what := "the command"
+		if len(name) > 0 {
+			what = strings.Trim(name[0], "'")
+		}
+		msg = fmt.Sprintf("%s failed with exit status %d and no message", what, out.ExitCode)
 	}
 	return &CommandError{Command: command, Message: msg, ExitCode: out.ExitCode}
 }

@@ -225,9 +225,17 @@ func (d Drives) Unmount(ctx context.Context, v Volume) error {
 // mountPoints lists the folders the device at dev is mounted on, oldest
 // first, from /proc/mounts, resolving device links (/dev/disk/by-uuid…).
 func (d Drives) mountPoints(ctx context.Context, dev string) ([]string, error) {
+	return d.mountPointsIn(ctx, dev, "/proc/mounts")
+}
+
+// mountPointsIn reads the mount table at table; tests pass their own.
+func (d Drives) mountPointsIn(ctx context.Context, dev, table string) ([]string, error) {
+	// The loop's status is its last test's, false whenever the table's
+	// last line is another device, so the script ends with exit 0.
 	script := `while read -r src dir rest; do
-  case "$src" in /dev/*) [ "$(readlink -f "$src" 2>/dev/null)" = ` + Quote(dev) + ` ] && printf '%s\n' "$dir";; esac
-done < /proc/mounts`
+  case "$src" in /dev/*) if [ "$(readlink -f "$src" 2>/dev/null)" = ` + Quote(dev) + ` ]; then printf '%s\n' "$dir"; fi;; esac
+done < ` + Quote(table) + `
+exit 0`
 	out, err := run(ctx, d.Exec, "sh -c "+Quote(script))
 	if err != nil {
 		return nil, err

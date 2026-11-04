@@ -2,11 +2,14 @@ package ops
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/xmhrnx/serverus/internal/transport"
+	"github.com/xmhrnx/serverus/internal/transport/local"
 )
 
 func TestParseLsblk(t *testing.T) {
@@ -200,5 +203,25 @@ func TestUnmountReportsWhatStaysMounted(t *testing.T) {
 	err := (Drives{Exec: s}).Unmount(context.Background(), Volume{Name: "sdb1", Path: "/dev/sdb1"})
 	if err == nil || !strings.Contains(err.Error(), "still mounted at /srv/disk") {
 		t.Fatalf("got %v", err)
+	}
+}
+
+// The mount table's last line is another device: the script must still
+// succeed. This broke unmounting on machines whose newest mount was a
+// different disk.
+func TestMountPointsWhenLastLineIsAnotherDevice(t *testing.T) {
+	table := filepath.Join(t.TempDir(), "mounts")
+	os.WriteFile(table, []byte("proc /proc proc rw 0 0\n/dev/null /srv/my\\040stick ext4 rw 0 0\n/dev/zero /mnt/other ext4 rw 0 0\n"), 0o644)
+	d := Drives{Exec: local.Open()}
+	got, err := d.mountPointsIn(context.Background(), "/dev/null", table)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != "/srv/my stick" {
+		t.Fatalf("got %q", got)
+	}
+	none, err := d.mountPointsIn(context.Background(), "/dev/full", table)
+	if err != nil || len(none) != 0 {
+		t.Fatalf("got %q, %v", none, err)
 	}
 }
