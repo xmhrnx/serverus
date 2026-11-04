@@ -36,7 +36,6 @@ func Run() error {
 	if err != nil {
 		return fmt.Errorf("data folder: %w", err)
 	}
-	theme.Install()
 	if err := theme.LoadFonts(assets.Files); err != nil {
 		return err
 	}
@@ -50,7 +49,9 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	theme.Apply(repo.Settings().Theme)
+	settings := repo.Settings()
+	theme.Install(settings.Tint, settings.Accent)
+	theme.Apply(settings.Theme)
 	giode.SecureStore.Service = AppID
 
 	e := &env.Env{
@@ -59,7 +60,6 @@ func Run() error {
 		Toasts:  giode.Toaster().Placement(giode.ToastBottomEnd).Max(4).Duration(5 * time.Second),
 	}
 	var root *shell.Root
-	settings := repo.Settings()
 	e.App = giode.New(giode.Config{
 		Title:          "Serverus",
 		Size:           image.Pt(1380, 880),
@@ -101,7 +101,7 @@ func Run() error {
 		})
 	}
 	e.Tunnels = tunnel.NewManager(e.App.Invalidate)
-	e.Transfers = transfer.NewQueue(3, e.App.Invalidate)
+	e.Transfers = transfer.NewQueue(settings.MaxTransfers, e.App.Invalidate)
 	var trayIcon *tray.Tray
 	e.Sessions = session.NewManager(dialerWith(creds), func() {
 		e.App.Invalidate()

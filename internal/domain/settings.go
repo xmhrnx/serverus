@@ -12,6 +12,12 @@ const (
 // Settings are the app-wide preferences.
 type Settings struct {
 	Theme Theme `json:"theme"`
+	// Tint names the background tone (see theme.Tints); empty is the
+	// default emerald.
+	Tint string `json:"tint,omitempty"`
+	// Accent names the highlight color (see theme.Accents); empty is
+	// the default violet.
+	Accent string `json:"accent,omitempty"`
 	// RefreshSeconds is how often metrics are collected.
 	RefreshSeconds int `json:"refreshSeconds"`
 	// TerminalFontSize is in sp.
@@ -32,6 +38,8 @@ type Settings struct {
 	// CloseToTray keeps the app running in the tray when the window is
 	// closed, so connections, tunnels and transfers carry on.
 	CloseToTray bool `json:"closeToTray"`
+	// MaxTransfers is how many uploads and downloads run at once.
+	MaxTransfers int `json:"maxTransfers"`
 }
 
 // DefaultSettings are the preferences of a fresh install.
@@ -43,6 +51,7 @@ func DefaultSettings() Settings {
 		ScrollbackLines:    5000,
 		ConfirmDestructive: true,
 		NotifyOnDisconnect: true,
+		MaxTransfers:       3,
 	}
 }
 
@@ -60,6 +69,9 @@ func (s Settings) Normalized() Settings {
 	}
 	if s.ScrollbackLines < 100 || s.ScrollbackLines > 100000 {
 		s.ScrollbackLines = d.ScrollbackLines
+	}
+	if s.MaxTransfers < 1 || s.MaxTransfers > 16 {
+		s.MaxTransfers = d.MaxTransfers
 	}
 	return s
 }

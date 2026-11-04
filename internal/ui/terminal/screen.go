@@ -15,6 +15,7 @@ type Screen struct {
 	mu       sync.Mutex
 	emu      *vt.Emulator
 	palette  Palette
+	chrome   int // the theme version palette follows
 	title    string
 	onChange func()
 }
@@ -24,6 +25,7 @@ type Screen struct {
 func NewScreen(cols, rows, scrollback int, onChange func()) *Screen {
 	s := &Screen{emu: vt.NewEmulator(cols, rows), palette: DefaultPalette, onChange: onChange}
 	s.emu.SetScrollbackSize(scrollback)
+	s.chrome, _ = applyChrome(&s.palette, 0)
 	s.emu.SetDefaultForegroundColor(s.palette.Foreground)
 	s.emu.SetDefaultBackgroundColor(s.palette.Background)
 	s.emu.SetCallbacks(vt.Callbacks{
@@ -126,6 +128,10 @@ type frame struct {
 func (s *Screen) capture(rows, offset int) frame {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if v, changed := applyChrome(&s.palette, s.chrome); changed {
+		s.chrome = v
+		s.emu.SetDefaultBackgroundColor(s.palette.Background)
+	}
 	cols := s.emu.Width()
 	height := s.emu.Height()
 	sb := 0

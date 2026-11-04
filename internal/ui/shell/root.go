@@ -157,7 +157,9 @@ func (r *Root) confirmDelete(s domain.Server) {
 }
 
 func (r *Root) applySettings(s domain.Settings) {
+	theme.Install(s.Tint, s.Accent)
 	theme.Apply(s.Theme)
+	r.env.Transfers.SetConcurrency(s.MaxTransfers)
 	r.env.Sessions.SetInterval(time.Duration(s.RefreshSeconds) * time.Second)
 }
 

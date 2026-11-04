@@ -26,6 +26,7 @@ var (
 	intervals    = []int{1, 2, 5, 10, 30}
 	fontSizes    = []int{11, 12, 13, 14, 15, 16, 18, 20}
 	scrollbacks  = []int{1000, 5000, 10000, 50000}
+	transfers    = []int{1, 2, 3, 4, 6, 8, 12, 16}
 	selectStyles = giode.Styles{Width: 200, Background: theme.Sunken, Color: theme.Text, BorderColor: theme.Border, BorderRadius: theme.RadiusMd}
 )
 
@@ -36,6 +37,9 @@ type Page struct {
 	onChange func(domain.Settings)
 
 	theme      *segmented.Control
+	tone       *Swatches
+	highlight  *Swatches
+	transfers  *dropdown.Select
 	interval   *dropdown.Select
 	fontSize   *dropdown.Select
 	scrollback *dropdown.Select
@@ -57,6 +61,15 @@ func New(e *env.Env, dataDir string, onChange func(domain.Settings)) *Page {
 	p.theme = giode.Input.Segmented("Dark", "Light", "Match system").Styles(giode.Styles{Width: 320, FontSize: theme.TextSm}).
 		OnChange(func(i int) { p.update(func(s *domain.Settings) { s.Theme = themes[i] }) })
 	p.theme.SetSelected(max(0, slices.Index(themes, s.Theme)))
+
+	p.tone = newSwatches(toneSwatches(), s.Tint, func(id string) { p.update(func(s *domain.Settings) { s.Tint = id }) })
+	p.highlight = newSwatches(highlightSwatches(), s.Accent, func(id string) { p.update(func(s *domain.Settings) { s.Accent = id }) })
+	p.transfers = selectOf(transfers, s.MaxTransfers, func(v int) string {
+		if v == 1 {
+			return "One at a time"
+		}
+		return fmt.Sprintf("%d at a time", v)
+	}).OnChange(func(i int) { p.update(func(s *domain.Settings) { s.MaxTransfers = transfers[i] }) })
 
 	p.interval = selectOf(intervals, s.RefreshSeconds, func(v int) string { return fmt.Sprintf("Every %d s", v) }).
 		OnChange(func(i int) { p.update(func(s *domain.Settings) { s.RefreshSeconds = intervals[i] }) })
@@ -117,6 +130,8 @@ func (p *Page) content() giode.Element {
 		giode.Text("Settings", theme.Title.With(giode.Styles{FontSize: theme.Text2XL})),
 		section("sun", "Appearance",
 			row("Theme", "", p.theme),
+			row("Background", p.tone.Name(), p.tone),
+			row("Accent color", p.highlight.Name(), p.highlight),
 			row("Terminal text size", "Applies to new terminal tabs", p.fontSize),
 		),
 	}
@@ -138,6 +153,7 @@ func (p *Page) content() giode.Element {
 			),
 			section("terminal", "Terminal & files",
 				row("Scrollback", "Lines each terminal remembers; applies to new tabs", p.scrollback),
+				row("Simultaneous transfers", "Uploads and downloads that run at once; the rest wait their turn", p.transfers),
 				p.hidden,
 			),
 			section("shield-check", "Safety",

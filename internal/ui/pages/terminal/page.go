@@ -202,7 +202,7 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 		p.strip(),
 		giode.Box(giode.Styles{
 			Width: -1, FlexGrow: 1, Height: -1, BorderRadius: theme.RadiusLg, Overflow: giode.OverflowHidden,
-			BorderColor: theme.SubtleBorder, BorderWidth: 1, Background: "#0c0f15",
+			BorderColor: theme.SubtleBorder, BorderWidth: 1, Background: theme.TerminalBackground(),
 		}, p.body()),
 	}
 	if giode.TouchInput() || giode.Compact() {
