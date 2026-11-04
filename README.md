@@ -64,8 +64,8 @@ macOS and Linux, and builds for Android.
   their MAC address is learned on the first SSH connection.
 - **Drives** (Linux): see the disks plugged in, with their volumes, file systems and
   free space; mount, unmount and open them in Files, and eject a USB drive so it can be
-  unplugged, without typing commands. udisks is used when it's there, `mount` as root
-  otherwise.
+  unplugged, without typing commands. Mount picks a folder by itself (udisks when it's
+  there, `/mnt/<label>` otherwise), or mounts on a folder you choose.
 - Privileged actions run as root through sudo; when sudo wants a password, Serverus asks
   for it once and keeps it until you disconnect.
 

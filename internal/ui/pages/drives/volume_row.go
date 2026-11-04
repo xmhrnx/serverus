@@ -20,6 +20,7 @@ type VolumeRow struct {
 	mount   *giode.ButtonElement
 	unmount *giode.ButtonElement
 	open    *widgets.ToolButton
+	mountTo *widgets.ToolButton
 	// Icon-only versions for phones.
 	mountIcon   *widgets.ToolButton
 	unmountIcon *widgets.ToolButton
@@ -31,6 +32,7 @@ func NewVolumeRow(p *Page) *VolumeRow {
 	r.mount = widgets.Button(widgets.Primary, "Mount", "plug").OnClick(func() { p.Mount(r.volume) })
 	r.unmount = widgets.Button(widgets.Secondary, "Unmount", "unplug").OnClick(func() { p.Unmount(r.volume) })
 	r.open = widgets.NewToolButton("folder-open", "Open in Files", func() { p.Open(r.volume) })
+	r.mountTo = widgets.NewToolButton("folder-input", "Mount to a folder…", func() { p.MountTo(r.volume) })
 	r.mountIcon = widgets.NewToolButton("plug", "Mount", func() { p.Mount(r.volume) }).Tint(theme.Primary)
 	r.unmountIcon = widgets.NewToolButton("unplug", "Unmount", func() { p.Unmount(r.volume) })
 	return r
@@ -107,9 +109,9 @@ func (r *VolumeRow) actions() []giode.Element {
 		return out
 	case v.Mountable():
 		if compact {
-			return []giode.Element{r.mountIcon}
+			return []giode.Element{r.mountTo, r.mountIcon}
 		}
-		return []giode.Element{r.mount}
+		return []giode.Element{r.mountTo, r.mount}
 	}
 	return nil
 }

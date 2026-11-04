@@ -132,7 +132,49 @@ func (d Drives) Mount(ctx context.Context, v Volume) (string, error) {
 	if !udisksUnavailable(err) {
 		return "", err
 	}
-	dir := path.Join("/mnt", mountName(v))
+	dir := autoMountDir(v)
+	return dir, d.mount(ctx, v, dir)
+}
+
+// autoMountDir is where Mount puts v without udisks.
+func autoMountDir(v Volume) string { return path.Join("/mnt", mountName(v)) }
+
+// ErrFolderNotEmpty is returned by MountAt when the folder has files,
+// which the mounted drive would hide until it's unmounted.
+var ErrFolderNotEmpty = errors.New("the folder isn't empty; its files would be hidden while the drive is mounted there")
+
+// MountAt mounts v on dir, creating the folder when it doesn't exist.
+// A folder with files in it is refused unless overlay is set.
+func (d Drives) MountAt(ctx context.Context, v Volume, dir string, overlay bool) error {
+	dir = path.Clean(strings.TrimSpace(dir))
+	if err := CheckMountDir(dir); err != nil {
+		return err
+	}
+	if !overlay {
+		out, err := run(ctx, d.Exec, "ls -A "+Quote(dir)+" 2>/dev/null | head -n 1")
+		if err == nil && strings.TrimSpace(out) != "" {
+			return ErrFolderNotEmpty
+		}
+	}
+	return d.mount(ctx, v, dir)
+}
+
+// CheckMountDir rejects folders that can't or shouldn't hold a mount:
+// relative paths and the system's own folders.
+func CheckMountDir(dir string) error {
+	if !path.IsAbs(dir) {
+		return errors.New("enter a full path, starting with /")
+	}
+	switch path.Clean(dir) {
+	case "/", "/bin", "/boot", "/dev", "/etc", "/lib", "/lib64", "/proc", "/root", "/run", "/sbin", "/sys", "/usr", "/var", "/home", "/tmp", "/media", "/mnt":
+		return fmt.Errorf("%s is a system folder; choose a folder inside it, like /mnt/data", path.Clean(dir))
+	}
+	return nil
+}
+
+// mount mounts v on dir as root, owned by the signed-in user for file
+// systems without owners (FAT, exFAT, NTFS).
+func (d Drives) mount(ctx context.Context, v Volume, dir string) error {
 	opts := ""
 	switch v.FSType {
 	case "vfat", "exfat", "ntfs", "ntfs3", "msdos":
@@ -142,19 +184,19 @@ func (d Drives) Mount(ctx context.Context, v Volume) (string, error) {
 			}
 		}
 	}
-	_, err = runPrivileged(ctx, d.Exec, fmt.Sprintf("mkdir -p %s && mount%s %s %s", Quote(dir), opts, Quote(v.Path), Quote(dir)))
-	return dir, err
+	_, err := runPrivileged(ctx, d.Exec, fmt.Sprintf("mkdir -p %s && mount%s %s %s", Quote(dir), opts, Quote(v.Path), Quote(dir)))
+	return err
 }
 
-// Unmount unmounts v, removing the folder it was mounted on when this
-// app made it under /mnt.
+// Unmount unmounts v, removing the folder it was mounted on when Mount
+// made it under /mnt; folders the user chose are kept.
 func (d Drives) Unmount(ctx context.Context, v Volume) error {
 	_, err := run(ctx, d.Exec, "udisksctl unmount --no-user-interaction -b "+Quote(v.Path))
 	if err == nil || !udisksUnavailable(err) {
 		return friendlyBusy(err)
 	}
 	cmd := "umount " + Quote(v.Path)
-	if strings.HasPrefix(v.MountPoint, "/mnt/") {
+	if v.MountPoint == autoMountDir(v) {
 		cmd += " && rmdir " + Quote(v.MountPoint) + " 2>/dev/null; true"
 	}
 	_, err = runPrivileged(ctx, d.Exec, cmd)

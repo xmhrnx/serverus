@@ -28,17 +28,17 @@ const rescanEvery = 5 * time.Second
 
 // Page lists a Linux machine's drives.
 type Page struct {
-	env      *env.Env
-	session  *session.Session
-	openDir  func(string)
-	data     *async.Resource[[]ops.Drive]
-	busy     map[string]bool // device paths with an action running
-	show     *segmented.Control
-	refresh  *widgets.ToolButton
-	scroll   *scroll.Scroll
-	cards    *giode.KeyedCache[string, *DriveCard]
-	volRows  *giode.KeyedCache[string, *VolumeRow]
-	drivesAt []ops.Drive
+	env     *env.Env
+	session *session.Session
+	openDir func(string)
+	data    *async.Resource[[]ops.Drive]
+	busy    map[string]bool // device paths with an action running
+	show    *segmented.Control
+	refresh *widgets.ToolButton
+	scroll  *scroll.Scroll
+	cards   *giode.KeyedCache[string, *DriveCard]
+	volRows *giode.KeyedCache[string, *VolumeRow]
+	mountTo *MountDialog
 }
 
 // New returns the drives page for s; openDir shows a folder in the
@@ -50,6 +50,7 @@ func New(e *env.Env, s *session.Session, openDir func(string)) *Page {
 	p.refresh = widgets.NewToolButton("refresh-cw", "Refresh", p.load)
 	p.cards = giode.NewKeyedCache[string, *DriveCard]()
 	p.volRows = giode.NewKeyedCache[string, *VolumeRow]()
+	p.mountTo = NewMountDialog(p.mountAt)
 	p.scroll = giode.Scroll(p.content, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}})
 	return p
 }
@@ -124,6 +125,31 @@ func (p *Page) Mount(v ops.Volume) {
 	})
 }
 
+// MountTo asks for a folder and mounts v there.
+func (p *Page) MountTo(v ops.Volume) { p.mountTo.Show(v) }
+
+// mountAt mounts v on dir for the dialog, which shows the error itself.
+func (p *Page) mountAt(v ops.Volume, dir string, overlay bool, done func(error)) {
+	d, ok := p.drives()
+	if !ok {
+		done(errors.New("not connected"))
+		return
+	}
+	p.busy[v.Path] = true
+	p.env.Async(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		return d.MountAt(ctx, v, dir, overlay)
+	}, func(err error) {
+		delete(p.busy, v.Path)
+		done(err)
+		if err == nil {
+			p.env.Success(v.Title() + " is mounted at " + dir)
+		}
+		p.load()
+	})
+}
+
 // Unmount unmounts v.
 func (p *Page) Unmount(v ops.Volume) {
 	p.act(v.Path, "Unmount "+v.Title(), func(ctx context.Context, d ops.Drives) (string, error) {
@@ -164,10 +190,10 @@ func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
 	if giode.Compact() {
 		pad = giode.UniformInset(theme.Space2)
 	}
-	return giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
+	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1, Padding: pad, Gap: theme.Space3},
 		p.toolbar(),
 		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.scroll),
-	).Layout(gtx)
+	), p.mountTo).Layout(gtx)
 }
 
 func (p *Page) toolbar() giode.Element {

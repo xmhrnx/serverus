@@ -128,3 +128,14 @@ func TestSudoDeclined(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestCheckMountDir(t *testing.T) {
+	for dir, ok := range map[string]bool{
+		"/mnt/data": true, "/srv/backup": true, "/home/pi/usb": true,
+		"/": false, "/etc": false, "/mnt": false, "/home/": false, "data": false, "": false,
+	} {
+		if err := CheckMountDir(dir); (err == nil) != ok {
+			t.Errorf("%q: %v", dir, err)
+		}
+	}
+}
