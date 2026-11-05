@@ -24,8 +24,18 @@ const processLimit = 400
 // CPU over a process's life, sort to the top while they live, only to
 // be gone by the time someone picks them.
 func (p RemoteProcesses) List(ctx context.Context) ([]Process, error) {
-	cmd := "sh -c " + Quote(`echo "self $$"; ps -eo pid=,ppid=,user:32=,pcpu=,pmem=,rss=,etimes=,stat=,tty=,comm=,args= --sort=-pcpu`)
-	out, err := run(ctx, p.Exec, cmd)
+	const columns = "pid=,ppid=,user:32=,pcpu=,pmem=,rss=,etimes=,stat=,tty=,unit=,comm=,args="
+	list := func(cols string) (string, error) {
+		return run(ctx, p.Exec, "sh -c "+Quote(`echo "self $$"; ps -eo `+cols+` --sort=-pcpu`))
+	}
+	out, err := list(columns)
+	if err != nil {
+		// ps built without systemd has no unit column: say "-" instead.
+		out, err = list(strings.Replace(columns, "unit=", "unit:1=", 1))
+		if err != nil {
+			out, err = list(strings.Replace(columns, "unit=,", "tty=,", 1))
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +99,13 @@ func (p RemoteProcesses) Signal(ctx context.Context, pid int32, sig Signal) erro
 	return err
 }
 
-// parsePS parses the ps output: ten fixed columns, then the command
+// parsePS parses the ps output: eleven fixed columns, then the command
 // line with its spaces.
 func parsePS(out string) []Process {
 	var procs []Process
 	for _, line := range strings.Split(out, "\n") {
 		f := strings.Fields(line)
-		if len(f) < 10 {
+		if len(f) < 11 {
 			continue
 		}
 		pid, err := strconv.ParseInt(f[0], 10, 32)
@@ -109,13 +119,16 @@ func parsePS(out string) []Process {
 		secs, _ := strconv.ParseInt(f[6], 10, 64)
 		p := Process{
 			PID: int32(pid), PPID: int32(ppid), User: f[2], CPU: cpu, Memory: mem,
-			RSS: rss * 1024, Elapsed: time.Duration(secs) * time.Second, State: f[7], Name: f[9],
+			RSS: rss * 1024, Elapsed: time.Duration(secs) * time.Second, State: f[7], Name: f[10],
+		}
+		if strings.Contains(f[9], ".") {
+			p.Unit = f[9]
 		}
 		if f[8] != "?" && f[8] != "-" {
 			p.TTY = f[8]
 		}
-		if len(f) > 10 {
-			p.Command = strings.Join(f[10:], " ")
+		if len(f) > 11 {
+			p.Command = strings.Join(f[11:], " ")
 		} else {
 			p.Command = p.Name
 		}

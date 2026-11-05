@@ -3,13 +3,13 @@ package ops
 import "testing"
 
 func TestParsePS(t *testing.T) {
-	out := "    1     0 root      0.1  0.2 12000  3600 Ss   ?     systemd   /sbin/init splash\n" +
-		"  842     1 www-data 12.5  1.4 98000   120 S    pts/0 nginx     nginx: worker process\n"
+	out := "    1     0 root      0.1  0.2 12000  3600 Ss   ?     init.scope    systemd   /sbin/init splash\n" +
+		"  842     1 www-data 12.5  1.4 98000   120 S    pts/0 nginx.service nginx     nginx: worker process\n"
 	ps := parsePS(out)
 	if len(ps) != 2 {
 		t.Fatalf("got %d", len(ps))
 	}
-	if ps[1].PID != 842 || ps[1].User != "www-data" || ps[1].CPU != 12.5 || ps[1].Command != "nginx: worker process" || ps[1].TTY != "pts/0" || ps[0].TTY != "" {
+	if ps[1].PID != 842 || ps[1].User != "www-data" || ps[1].CPU != 12.5 || ps[1].Command != "nginx: worker process" || ps[1].TTY != "pts/0" || ps[0].TTY != "" || ps[1].Service() != "nginx.service" || ps[0].Service() != "" {
 		t.Errorf("got %+v", ps[1])
 	}
 	if ps[0].RSS != 12000*1024 || ps[0].Elapsed.Hours() != 1 {
@@ -73,5 +73,22 @@ func TestWithoutOwnCommands(t *testing.T) {
 		if names[i] != want[i] {
 			t.Fatalf("kept %v, want %v", names, want)
 		}
+	}
+}
+
+func TestUnitFromCgroup(t *testing.T) {
+	for in, want := range map[string]string{
+		"0::/system.slice/nginx.service\n":                                     "nginx.service",
+		"0::/user.slice/user-1000.slice/session-3.scope\n":                     "session-3.scope",
+		"12:pids:/\n1:name=systemd:/system.slice/docker.service\n0::/\n":       "docker.service",
+		"0::/user.slice/user-1000.slice/user@1000.service/app.slice/x.service": "user@1000.service",
+		"0::/\n": "",
+	} {
+		if got := unitFromCgroup(in); got != want {
+			t.Errorf("%q: got %q, want %q", in, got, want)
+		}
+	}
+	if (Process{Unit: "user@1000.service"}).Service() != "" {
+		t.Error("the user manager isn't a service to stop")
 	}
 }

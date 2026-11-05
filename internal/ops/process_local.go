@@ -52,6 +52,11 @@ func (LocalProcesses) List(ctx context.Context) ([]Process, error) {
 		if st, err := p.StatusWithContext(ctx); err == nil && len(st) > 0 {
 			proc.State = st[0]
 		}
+		if runtime.GOOS == "linux" {
+			if b, err := os.ReadFile(fmt.Sprintf("/proc/%d/cgroup", p.Pid)); err == nil {
+				proc.Unit = unitFromCgroup(string(b))
+			}
+		}
 		proc.Command, _ = p.CmdlineWithContext(ctx)
 		if proc.Command == "" {
 			proc.Command = name
