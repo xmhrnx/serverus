@@ -14,15 +14,15 @@ import (
 
 // Confirm asks the user to confirm an action.
 type Confirm struct {
-	open   bool
+	open bool
 	// pending is set while a shown request has neither run nor been
 	// declined; closing the dialog any other way counts as declining.
 	pending bool
-	req    env.Confirmation
-	dialog *dialog.Dialog
-	cancel *giode.ButtonElement
-	ok     *giode.ButtonElement
-	danger *giode.ButtonElement
+	req     env.Confirmation
+	dialog  *dialog.Dialog
+	cancel  *giode.ButtonElement
+	ok      *giode.ButtonElement
+	danger  *giode.ButtonElement
 }
 
 // NewConfirm returns the confirmation dialog.
