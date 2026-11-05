@@ -56,13 +56,33 @@ func runPrivileged(ctx context.Context, ex transport.Executor, command string) (
 // runAsRoot runs command through sudo, asking for the password when
 // sudo needs one and the executor can ask.
 func runAsRoot(ctx context.Context, ex transport.Executor, command string) (string, error) {
-	out, err := run(ctx, ex, "sudo -n sh -c "+Quote(command))
+	return runAsRootInput(ctx, ex, command, nil)
+}
+
+// runAsRootInput is runAsRoot with input on the command's stdin. sudo
+// reads the password a byte at a time up to the newline, so whatever
+// follows it reaches the command.
+func runAsRootInput(ctx context.Context, ex transport.Executor, command string, input []byte) (string, error) {
+	in, canFeed := ex.(transport.InputRunner)
+	if input != nil && !canFeed {
+		return "", transport.ErrUnsupported
+	}
+	var out string
+	var err error
+	if input != nil {
+		var res transport.Output
+		res, err = in.RunInput(ctx, "sudo -n sh -c "+Quote(command), input)
+		if err == nil {
+			out, err = string(res.Stdout), resultError(command, res)
+		}
+	} else {
+		out, err = run(ctx, ex, "sudo -n sh -c "+Quote(command))
+	}
 	var ce *CommandError
 	if !errors.As(err, &ce) || !needsPassword(ce.Message) {
 		return out, err
 	}
 	src, canAsk := ex.(PasswordSource)
-	in, canFeed := ex.(transport.InputRunner)
 	if !canAsk || !canFeed {
 		return "", ErrNeedsRoot
 	}
@@ -71,7 +91,7 @@ func runAsRoot(ctx context.Context, ex transport.Executor, command string) (stri
 		if !ok {
 			return "", ErrCanceled
 		}
-		res, err := in.RunInput(ctx, "sudo -S -p '' sh -c "+Quote(command), []byte(pw+"\n"))
+		res, err := in.RunInput(ctx, "sudo -S -p '' sh -c "+Quote(command), append([]byte(pw+"\n"), input...))
 		if err != nil {
 			return "", err
 		}

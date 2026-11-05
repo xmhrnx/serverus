@@ -13,6 +13,7 @@ import (
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/menu"
 
+	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/platform"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/transport"
@@ -60,6 +61,7 @@ type Page struct {
 	names  *NameDialog
 	chmod  *ChmodDialog
 	editor *EditorDialog
+	sudo   *Sudo
 }
 
 // New returns the file manager for s, starting in the home directory.
@@ -112,7 +114,8 @@ func New(e *env.Env, s *session.Session) *Page {
 
 	p.names = NewNameDialog()
 	p.chmod = NewChmodDialog()
-	p.editor = NewEditorDialog(e)
+	p.sudo = &Sudo{env: e, files: p.rootFiles}
+	p.editor = NewEditorDialog(e, p.sudo)
 	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("folder-open"), "Open", func() { p.activate(p.target) }).
 		IconItem(theme.IconSource("pencil"), "Edit", func() { p.edit(p.target) }).
@@ -422,24 +425,33 @@ func (p *Page) HandleDrop(paths []string) {
 // refreshLater reloads the listing from a transfer's goroutine.
 func (p *Page) refreshLater() { p.env.App.Post(p.refresh) }
 
-// mutate runs a file system change, then refreshes.
-func (p *Page) mutate(what string, fn func(transport.FileSystem) error) {
+// mutate runs a file system change, then refreshes. When the server
+// refuses it for lack of permission, it offers to run root instead (the
+// same change through sudo); action names it for that question.
+func (p *Page) mutate(what, action string, fn func(transport.FileSystem) error, root func(context.Context, ops.RootFiles) error) {
 	fsys, err := p.fs()
 	if err != nil {
 		return
 	}
-	p.env.Async(func() error { return fn(fsys) }, func(err error) {
+	finish := func(err error) {
 		if err != nil {
 			p.env.Fail(what, err)
 		}
 		p.refresh()
+	}
+	p.env.Async(func() error { return fn(fsys) }, func(err error) {
+		if p.sudo.Offer(action, err, root, finish) {
+			return
+		}
+		finish(err)
 	})
 }
 
 func (p *Page) askNewFolder() {
 	p.names.Ask("folder-plus", "New folder", "Create", "", func(name string) error {
 		target := transport.Join(p.cwd, name)
-		p.mutate("Create "+name, func(f transport.FileSystem) error { return f.Mkdir(target) })
+		p.mutate("Create "+name, "create "+target, func(f transport.FileSystem) error { return f.Mkdir(target) },
+			func(ctx context.Context, r ops.RootFiles) error { return r.Mkdir(ctx, target) })
 		p.selected = name
 		return nil
 	})
@@ -448,13 +460,13 @@ func (p *Page) askNewFolder() {
 func (p *Page) askNewFile() {
 	p.names.Ask("file-plus", "New file", "Create", "", func(name string) error {
 		target := transport.Join(p.cwd, name)
-		p.mutate("Create "+name, func(f transport.FileSystem) error {
+		p.mutate("Create "+name, "create "+target, func(f transport.FileSystem) error {
 			w, err := f.Create(target)
 			if err != nil {
 				return err
 			}
 			return w.Close()
-		})
+		}, func(ctx context.Context, r ops.RootFiles) error { return r.Write(ctx, target, nil) })
 		p.selected = name
 		return nil
 	})
@@ -464,7 +476,8 @@ func (p *Page) askRename(f transport.FileInfo) {
 	from := p.pathOf(f)
 	p.names.Ask("tag", "Rename "+f.Name, "Rename", f.Name, func(name string) error {
 		to := transport.Join(p.cwd, name)
-		p.mutate("Rename "+f.Name, func(fsys transport.FileSystem) error { return fsys.Rename(from, to) })
+		p.mutate("Rename "+f.Name, "rename "+from, func(fsys transport.FileSystem) error { return fsys.Rename(from, to) },
+			func(ctx context.Context, r ops.RootFiles) error { return r.Rename(ctx, from, to) })
 		p.selected = name
 		return nil
 	})
@@ -473,7 +486,8 @@ func (p *Page) askRename(f transport.FileInfo) {
 func (p *Page) askChmod(f transport.FileInfo) {
 	target := p.pathOf(f)
 	p.chmod.Ask(f.Name, f.Mode.Perm(), func(m fs.FileMode) {
-		p.mutate("Change permissions", func(fsys transport.FileSystem) error { return fsys.Chmod(target, m) })
+		p.mutate("Change permissions", "change the permissions of "+target, func(fsys transport.FileSystem) error { return fsys.Chmod(target, m) },
+			func(ctx context.Context, r ops.RootFiles) error { return r.Chmod(ctx, target, m) })
 	})
 }
 
@@ -486,7 +500,8 @@ func (p *Page) confirmDelete(f transport.FileInfo) {
 	p.env.Confirm(env.Confirmation{
 		Title: "Delete " + f.Name + "?", Message: msg, Action: "Delete", Destructive: true,
 		OnConfirm: func() {
-			p.mutate("Delete "+f.Name, func(fsys transport.FileSystem) error { return fsys.Remove(target, f.IsDir) })
+			p.mutate("Delete "+f.Name, "delete "+target, func(fsys transport.FileSystem) error { return fsys.Remove(target, f.IsDir) },
+				func(ctx context.Context, r ops.RootFiles) error { return r.Remove(ctx, target, f.IsDir) })
 		},
 	})
 }

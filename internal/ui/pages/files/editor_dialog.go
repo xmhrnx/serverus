@@ -2,6 +2,7 @@ package files
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/xmhrnx/giode/components/dialog"
 	"github.com/xmhrnx/giode/components/input"
 
+	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/transport"
 	"github.com/xmhrnx/serverus/internal/ui/env"
 	"github.com/xmhrnx/serverus/internal/ui/format"
@@ -28,6 +30,7 @@ type EditorDialog struct {
 	orig    string
 	fsys    transport.FileSystem
 	onSaved func()
+	sudo    *Sudo
 
 	text   *input.Input
 	cancel *giode.ButtonElement
@@ -35,9 +38,10 @@ type EditorDialog struct {
 	dialog *dialog.Dialog
 }
 
-// NewEditorDialog returns the editor.
-func NewEditorDialog(e *env.Env) *EditorDialog {
-	d := &EditorDialog{env: e}
+// NewEditorDialog returns the editor; sudo opens and saves files the
+// user can't, after asking.
+func NewEditorDialog(e *env.Env, sudo *Sudo) *EditorDialog {
+	d := &EditorDialog{env: e, sudo: sudo}
 	d.text = giode.Input.Text("", giode.Styles{
 		Background: theme.Sunken, Color: theme.Text, BorderColor: theme.Border, BorderWidth: 1, BorderRadius: theme.RadiusMd,
 		Padding: giode.UniformInset(theme.Space3), FontFamily: theme.Mono, FontSize: theme.TextSm, Height: -1, LineHeight: 19, TabWidth: 4,
@@ -54,6 +58,16 @@ func (d *EditorDialog) Edit(fsys transport.FileSystem, p string, onSaved func())
 	d.loading, d.err, d.open = true, "", true
 	d.text.SetText("")
 	var content string
+	loaded := func(err error) {
+		d.loading = false
+		if err != nil {
+			d.err = err.Error()
+			return
+		}
+		d.orig = content
+		d.text.SetText(content)
+		d.text.Focus()
+	}
 	d.env.Async(func() error {
 		r, err := fsys.Open(p)
 		if err != nil {
@@ -64,24 +78,33 @@ func (d *EditorDialog) Edit(fsys transport.FileSystem, p string, onSaved func())
 		if err != nil {
 			return err
 		}
-		if len(data) > maxEditSize {
-			return fmt.Errorf("the file is larger than %s; download it instead", format.Bytes(maxEditSize))
-		}
-		if !isText(data) {
-			return fmt.Errorf("this looks like a binary file; download it instead")
-		}
-		content = string(data)
-		return nil
+		content, err = editable(data)
+		return err
 	}, func(err error) {
-		d.loading = false
-		if err != nil {
-			d.err = err.Error()
+		asRoot := func(ctx context.Context, rf ops.RootFiles) error {
+			data, err := rf.Read(ctx, p, maxEditSize+1)
+			if err != nil {
+				return err
+			}
+			content, err = editable(data)
+			return err
+		}
+		if d.sudo.Offer("open "+p, err, asRoot, loaded) {
 			return
 		}
-		d.orig = content
-		d.text.SetText(content)
-		d.text.Focus()
+		loaded(err)
 	})
+}
+
+// editable checks data can be edited here and returns it as text.
+func editable(data []byte) (string, error) {
+	if len(data) > maxEditSize {
+		return "", fmt.Errorf("the file is larger than %s; download it instead", format.Bytes(maxEditSize))
+	}
+	if !isText(data) {
+		return "", fmt.Errorf("this looks like a binary file; download it instead")
+	}
+	return string(data), nil
 }
 
 func (d *EditorDialog) close() {
@@ -110,16 +133,23 @@ func (d *EditorDialog) write() {
 		}
 		return w.Close()
 	}, func(err error) {
-		d.save.Loading(false)
-		if err != nil {
-			d.env.Fail("Save "+p, err)
+		saved := func(err error) {
+			d.save.Loading(false)
+			if err != nil {
+				d.env.Fail("Save "+p, err)
+				return
+			}
+			d.orig = string(data)
+			d.env.Success("Saved " + p)
+			if d.onSaved != nil {
+				d.onSaved()
+			}
+		}
+		asRoot := func(ctx context.Context, rf ops.RootFiles) error { return rf.Write(ctx, p, data) }
+		if d.sudo.Offer("save "+p, err, asRoot, saved) {
 			return
 		}
-		d.orig = string(data)
-		d.env.Success("Saved " + p)
-		if d.onSaved != nil {
-			d.onSaved()
-		}
+		saved(err)
 	})
 }
 

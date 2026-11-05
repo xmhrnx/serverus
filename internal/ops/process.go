@@ -2,8 +2,13 @@ package ops
 
 import (
 	"context"
+	"errors"
 	"time"
 )
+
+// ErrProcessGone is returned when a signal finds the process has
+// already exited.
+var ErrProcessGone = errors.New("the process has already exited")
 
 // Process is one running program.
 type Process struct {
@@ -15,6 +20,7 @@ type Process struct {
 	RSS     uint64  // bytes
 	Elapsed time.Duration
 	State   string
+	TTY     string // the terminal it runs in, "" for none
 	Name    string
 	Command string
 }

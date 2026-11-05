@@ -39,6 +39,8 @@ type Confirmation struct {
 	// the user turned confirmations off.
 	Destructive bool
 	OnConfirm   func()
+	// OnCancel, when set, runs if the user declines or dismisses it.
+	OnCancel func()
 }
 
 // SetConfirmer installs the function showing confirmations.

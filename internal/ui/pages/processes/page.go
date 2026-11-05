@@ -2,6 +2,7 @@ package processes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -205,6 +206,11 @@ func (p *Page) signal(pr ops.Process, sig ops.Signal) {
 			defer cancel()
 			return procs.Signal(ctx, pr.PID, sig)
 		}, func(err error) {
+			if errors.Is(err, ops.ErrProcessGone) {
+				p.env.Info(fmt.Sprintf("%s (%d) has already exited", pr.Name, pr.PID))
+				p.load()
+				return
+			}
 			if err != nil {
 				p.env.Fail(fmt.Sprintf("Signal %s (%d)", pr.Name, pr.PID), err)
 				return

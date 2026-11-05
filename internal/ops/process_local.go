@@ -2,17 +2,26 @@ package ops
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"sort"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/process"
+
+	"github.com/xmhrnx/serverus/internal/transport"
 )
 
 // LocalProcesses manages this computer's processes, on any platform.
-type LocalProcesses struct{}
+// Exec, when set, sends signals through sudo to processes of other
+// users on Linux and macOS.
+type LocalProcesses struct {
+	Exec transport.Executor
+}
 
 // List returns processes, busiest first.
 func (LocalProcesses) List(ctx context.Context) ([]Process, error) {
@@ -58,7 +67,21 @@ func (LocalProcesses) List(ctx context.Context) ([]Process, error) {
 
 // Signal sends sig to pid. Windows has no signals: every signal ends
 // the process there.
-func (LocalProcesses) Signal(ctx context.Context, pid int32, sig Signal) error {
+func (l LocalProcesses) Signal(ctx context.Context, pid int32, sig Signal) error {
+	err := l.signal(pid, sig)
+	switch {
+	case errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH):
+		return ErrProcessGone
+	case errors.Is(err, syscall.EPERM) && l.Exec != nil && runtime.GOOS != "windows":
+		_, err = runAsRoot(ctx, l.Exec, fmt.Sprintf("kill -%s %d", sig, pid))
+		if err != nil && strings.Contains(strings.ToLower(err.Error()), "no such process") {
+			return ErrProcessGone
+		}
+	}
+	return err
+}
+
+func (LocalProcesses) signal(pid int32, sig Signal) error {
 	proc, err := os.FindProcess(int(pid))
 	if err != nil {
 		return err
