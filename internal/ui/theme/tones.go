@@ -24,7 +24,7 @@ type Tone struct {
 var Tones = []Tone{
 	{
 		ID: "emerald", Name: "Emerald", Terminal: "#09130f", Swatch: "#1b553c",
-		Dark:  Surfaces{Background: "#08110d", Surface: "#0f1c17", Border: "#1d3028", Text: "#e5eee9", Muted: "#83998e", Secondary: "#97ada2"},
+		Dark:  Surfaces{Background: "#08110d", Surface: "#0c1713", Border: "#1d3028", Text: "#e5eee9", Muted: "#83998e", Secondary: "#97ada2"},
 		Light: Surfaces{Background: "#f0f6f3", Surface: "#ffffff", Border: "#d9e6df", Text: "#0f1a15", Muted: "#5f756a", Secondary: "#4f665b"},
 	},
 	{
