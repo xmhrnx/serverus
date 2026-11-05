@@ -50,7 +50,8 @@ macOS and Linux, and builds for Android.
   Transfers panel. SFTP keeps many requests in flight, so transfers run at the speed of
   the network.
 - Edit text files in place, create files and folders, rename, change permissions,
-  delete, and copy paths.
+  delete, and copy paths. When the server refuses for lack of permission (files owned by
+  root), Serverus offers to do it through sudo.
 
 **Administration**
 - **Processes**: sortable, filterable, refreshed every 3 seconds; terminate, kill or

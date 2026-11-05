@@ -2,6 +2,7 @@ package processes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -79,14 +80,27 @@ func New(e *env.Env, s *session.Session) *Page {
 	p.list = giode.VirtualList(count, 46, p.row, listStyle).ClickFocusesRow(false)
 	p.compactList = giode.VirtualList(count, 58, p.row, listStyle).ClickFocusesRow(false)
 	p.pause = widgets.NewToolButton("circle-stop", "Pause updates", func() { p.paused = !p.paused })
-	p.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
+	p.menu = p.menuFor(ops.Process{})
+	return p
+}
+
+// menuFor builds the actions for pr. A process run by a systemd service
+// gets the service's stop and restart first: killing it alone just has
+// systemd start it again.
+func (p *Page) menuFor(pr ops.Process) *menu.Menu {
+	m := giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd})
+	if svc := pr.Service(); svc != "" {
+		m.IconItem(theme.IconSource("square"), "Stop service "+svc, func() { p.service(p.target, ops.ServiceStop) }).
+			IconItem(theme.IconSource("rotate-cw"), "Restart service "+svc, func() { p.service(p.target, ops.ServiceRestart) }).
+			Separator()
+	}
+	return m.
 		IconItem(theme.IconSource("x"), "Terminate (SIGTERM)", func() { p.signal(p.target, ops.SignalTerm) }).
 		IconItem(theme.IconSource("skull"), "Kill (SIGKILL)", func() { p.signal(p.target, ops.SignalKill) }).
-		IconItem(theme.IconSource("rotate-cw"), "Reload (SIGHUP)", func() { p.signal(p.target, ops.SignalHup) }).
+		IconItem(theme.IconSource("refresh-cw"), "Reload (SIGHUP)", func() { p.signal(p.target, ops.SignalHup) }).
 		Separator().
 		IconItem(theme.IconSource("copy"), "Copy command line", func() { p.env.App.SetClipboard(p.target.Command) }).
 		IconItem(theme.IconSource("copy"), "Copy PID", func() { p.env.App.SetClipboard(fmt.Sprint(p.target.PID)) })
-	return p
 }
 
 func (p *Page) sort(c int) {
@@ -150,6 +164,7 @@ func (p *Page) row(i int) giode.Element {
 			return
 		}
 		p.selected, p.target = pr.PID, pr
+		p.menu = p.menuFor(pr)
 		p.menu.OpenAt(widgets.ClickPoint(e))
 	}
 	pr := p.rows.Get(i, func() *giode.PressableElement {
@@ -205,24 +220,97 @@ func (p *Page) signal(pr ops.Process, sig ops.Signal) {
 			defer cancel()
 			return procs.Signal(ctx, pr.PID, sig)
 		}, func(err error) {
+			if errors.Is(err, ops.ErrProcessGone) {
+				p.env.Info(fmt.Sprintf("%s (%d) has already exited", pr.Name, pr.PID))
+				p.load()
+				return
+			}
 			if err != nil {
 				p.env.Fail(fmt.Sprintf("Signal %s (%d)", pr.Name, pr.PID), err)
 				return
 			}
 			p.env.Success(fmt.Sprintf("Sent SIG%s to %s (%d)", sig, pr.Name, pr.PID))
 			p.load()
+			if svc := pr.Service(); svc != "" && sig != ops.SignalHup {
+				p.checkRestarted(pr, svc)
+			}
 		})
 	}
 	if sig == ops.SignalHup {
 		run()
 		return
 	}
+	msg := fmt.Sprintf("Send SIG%s to process %d (%s), run by %s.", sig, pr.PID, pr.Command, pr.User)
+	if svc := pr.Service(); svc != "" {
+		msg += " It belongs to " + svc + ", which systemd may start again right away; use Stop service to keep it stopped."
+	}
 	p.env.Confirm(env.Confirmation{
 		Title:       fmt.Sprintf("Stop %s?", pr.Name),
-		Message:     fmt.Sprintf("Send SIG%s to process %d (%s), run by %s.", sig, pr.PID, pr.Command, pr.User),
+		Message:     msg,
 		Action:      map[ops.Signal]string{ops.SignalTerm: "Terminate", ops.SignalKill: "Kill"}[sig],
 		Destructive: true,
 		OnConfirm:   run,
+	})
+}
+
+// service stops or restarts the systemd service running pr.
+func (p *Page) service(pr ops.Process, action ops.ServiceAction) {
+	svc := pr.Service()
+	ex, err := p.session.Executor()
+	if svc == "" || err != nil {
+		return
+	}
+	verb := map[ops.ServiceAction]string{ops.ServiceStop: "Stop", ops.ServiceRestart: "Restart"}[action]
+	run := func() {
+		p.env.Async(func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			defer cancel()
+			return ops.Services{Exec: ex}.Do(ctx, svc, action)
+		}, func(err error) {
+			if err != nil {
+				p.env.Fail(verb+" "+svc, err)
+				return
+			}
+			p.env.Success(svc + map[ops.ServiceAction]string{ops.ServiceStop: " is stopped", ops.ServiceRestart: " restarted"}[action])
+			p.load()
+		})
+	}
+	if action != ops.ServiceStop {
+		run()
+		return
+	}
+	p.env.Confirm(env.Confirmation{
+		Title:   "Stop " + svc + "?",
+		Message: "systemd stops " + pr.Name + " and the rest of the service, and keeps it stopped until it's started again or the server restarts (if it's enabled at boot).",
+		Action:  "Stop service", Destructive: true, OnConfirm: run,
+	})
+}
+
+// checkRestarted tells the user when systemd started a killed service's
+// process again, which otherwise looks like the kill did nothing.
+func (p *Page) checkRestarted(pr ops.Process, svc string) {
+	procs, err := p.session.Processes()
+	if err != nil {
+		return
+	}
+	var again ops.Process
+	p.env.Async(func() error {
+		time.Sleep(2 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		list, err := procs.List(ctx)
+		for _, q := range list {
+			if q.Unit == svc && q.Name == pr.Name && q.PID != pr.PID {
+				again = q
+				break
+			}
+		}
+		return err
+	}, func(err error) {
+		if err == nil && again.PID != 0 {
+			p.env.Info(fmt.Sprintf("%s started %s again (PID %d). Right-click it and choose Stop service to keep it stopped.", svc, pr.Name, again.PID))
+			p.load()
+		}
 	})
 }
 

@@ -14,12 +14,15 @@ import (
 
 // Confirm asks the user to confirm an action.
 type Confirm struct {
-	open   bool
-	req    env.Confirmation
-	dialog *dialog.Dialog
-	cancel *giode.ButtonElement
-	ok     *giode.ButtonElement
-	danger *giode.ButtonElement
+	open bool
+	// pending is set while a shown request has neither run nor been
+	// declined; closing the dialog any other way counts as declining.
+	pending bool
+	req     env.Confirmation
+	dialog  *dialog.Dialog
+	cancel  *giode.ButtonElement
+	ok      *giode.ButtonElement
+	danger  *giode.ButtonElement
 }
 
 // NewConfirm returns the confirmation dialog.
@@ -27,7 +30,7 @@ func NewConfirm() *Confirm {
 	c := &Confirm{}
 	c.cancel = widgets.Button(widgets.Secondary, "Cancel", "").OnClick(func() { c.open = false })
 	run := func() {
-		c.open = false
+		c.open, c.pending = false, false
 		if c.req.OnConfirm != nil {
 			giode.AfterLayout(c.req.OnConfirm)
 		}
@@ -43,7 +46,8 @@ func (c *Confirm) Show(req env.Confirmation) {
 	if req.Action == "" {
 		req.Action = "Confirm"
 	}
-	c.req = req
+	c.decline()
+	c.req, c.pending = req, true
 	c.ok.Label(req.Action)
 	c.danger.Label(req.Action)
 	c.open = true
@@ -58,5 +62,21 @@ func (c *Confirm) content() giode.Element {
 	return widgets.DialogFrame(icon, c.req.Title, "", 420, body, c.cancel, btn)
 }
 
+// decline runs the pending request's OnCancel.
+func (c *Confirm) decline() {
+	if c.pending {
+		c.pending = false
+		if c.req.OnCancel != nil {
+			giode.AfterLayout(c.req.OnCancel)
+		}
+	}
+}
+
 // Layout draws the dialog while it's open.
-func (c *Confirm) Layout(gtx layout.Context) layout.Dimensions { return c.dialog.Layout(gtx) }
+func (c *Confirm) Layout(gtx layout.Context) layout.Dimensions {
+	dims := c.dialog.Layout(gtx)
+	if !c.open {
+		c.decline() // canceled, or dismissed with Escape or a click outside
+	}
+	return dims
+}

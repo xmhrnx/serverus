@@ -336,7 +336,8 @@ func (s *Session) Forwarder() (transport.Forwarder, error) {
 // Processes returns the process manager for the server.
 func (s *Session) Processes() (ops.Processes, error) {
 	if s.Server().Protocol == domain.ProtocolLocal {
-		return ops.LocalProcesses{}, nil
+		ex, _ := s.Executor() // for sudo; signals work without it
+		return ops.LocalProcesses{Exec: ex}, nil
 	}
 	ex, err := s.Executor()
 	if err != nil {
