@@ -44,13 +44,8 @@ func (c *Conn) OpenShell(ctx context.Context, cols, rows int) (transport.Shell, 
 	return s, nil
 }
 
-func (s *shell) Read(p []byte) (int, error)  { return s.pty.Read(p) }
-func (s *shell) Write(p []byte) (int, error) { return s.pty.Write(p) }
-func (s *shell) Resize(cols, rows int) error { return s.pty.Resize(cols, rows) }
+func (s *shell) Read(p []byte) (int, error) { return s.pty.Read(p) }
 
-func (s *shell) Close() error {
-	if s.cmd.Process != nil {
-		_ = s.cmd.Process.Kill()
-	}
-	return s.pty.Close()
-}
+func (s *shell) Write(p []byte) (int, error) { return s.pty.Write(p) }
+
+func (s *shell) Resize(cols, rows int) error { return s.pty.Resize(cols, rows) }

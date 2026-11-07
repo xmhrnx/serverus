@@ -1,11 +1,9 @@
 package drives
 
 import (
-	"errors"
 	"path"
 	"strings"
 
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/checkbox"
 	"github.com/xmhrnx/giode/components/dialog"
@@ -56,45 +54,3 @@ func (d *MountDialog) Show(v ops.Volume) {
 	d.open = true
 	d.folder.Focus()
 }
-
-func (d *MountDialog) submit() {
-	if d.working {
-		return
-	}
-	dir := path.Clean(strings.TrimSpace(d.folder.Text()))
-	if err := ops.CheckMountDir(dir); err != nil {
-		d.err = err.Error()
-		return
-	}
-	d.working, d.err = true, ""
-	d.mount(d.volume, dir, d.overlay.Checked(), func(err error) {
-		d.working = false
-		if err != nil {
-			d.err = err.Error()
-			if errors.Is(err, ops.ErrFolderNotEmpty) {
-				d.err += ". Choose another folder, or tick the box below to mount over it."
-			}
-			return
-		}
-		d.open = false
-	})
-}
-
-func (d *MountDialog) content() giode.Element {
-	rows := []giode.Element{
-		widgets.FormField("Folder on the server", "Created if it doesn't exist", d.folder),
-		d.overlay,
-	}
-	if d.err != "" {
-		rows = append(rows, widgets.Banner("circle-alert", theme.Danger, d.err))
-	}
-	footer := []giode.Element{d.cancel, d.ok}
-	if d.working {
-		footer = []giode.Element{giode.Spinner(giode.Styles{Width: 20, Height: 20, Color: theme.Primary})}
-	}
-	body := giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1}, rows...)
-	return widgets.DialogFrame("folder-input", "Mount "+d.volume.Title(), d.volume.Path, 460, body, footer...)
-}
-
-// Layout draws the dialog while it's open.
-func (d *MountDialog) Layout(gtx layout.Context) layout.Dimensions { return d.dialog.Layout(gtx) }

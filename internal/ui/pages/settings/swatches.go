@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 
 	"github.com/xmhrnx/serverus/internal/ui/theme"
@@ -47,41 +46,4 @@ func newSwatches(options []swatch, selected string, onPick func(id string)) *Swa
 		}))
 	}
 	return s
-}
-
-// Name is the selected option's name.
-func (s *Swatches) Name() string {
-	for _, o := range s.options {
-		if o.id == s.selected {
-			return o.name
-		}
-	}
-	return ""
-}
-
-// Layout draws the circles, wrapping on narrow screens.
-func (s *Swatches) Layout(gtx layout.Context) layout.Dimensions {
-	items := make([]giode.Element, len(s.buttons))
-	for i, b := range s.buttons {
-		items[i] = b
-	}
-	return giode.Row(giode.Styles{Gap: 4, Align: giode.AlignCenter}, items...).Layout(gtx)
-}
-
-// toneSwatches lists the background tones.
-func toneSwatches() []swatch {
-	out := make([]swatch, len(theme.Tones))
-	for i, t := range theme.Tones {
-		out[i] = swatch{id: t.ID, name: t.Name, fill: t.Swatch}
-	}
-	return out
-}
-
-// highlightSwatches lists the accent colors.
-func highlightSwatches() []swatch {
-	out := make([]swatch, len(theme.Highlights))
-	for i, h := range theme.Highlights {
-		out[i] = swatch{id: h.ID, name: h.Name, fill: h.Dark}
-	}
-	return out
 }

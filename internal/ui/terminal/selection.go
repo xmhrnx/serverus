@@ -4,14 +4,14 @@ package terminal
 // then the screen) and a column.
 type point struct{ line, col int }
 
-func (p point) before(o point) bool {
-	return p.line < o.line || (p.line == o.line && p.col < o.col)
-}
-
 // selection is a mouse-selected range of cells.
 type selection struct {
 	anchor, head point
 	active       bool
+}
+
+func (p point) before(o point) bool {
+	return p.line < o.line || (p.line == o.line && p.col < o.col)
 }
 
 // ordered returns the selection's start and end.

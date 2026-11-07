@@ -3,12 +3,10 @@
 package dialogs
 
 import (
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/dialog"
 
 	"github.com/xmhrnx/serverus/internal/ui/env"
-	"github.com/xmhrnx/serverus/internal/ui/theme"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
@@ -51,32 +49,4 @@ func (c *Confirm) Show(req env.Confirmation) {
 	c.ok.Label(req.Action)
 	c.danger.Label(req.Action)
 	c.open = true
-}
-
-func (c *Confirm) content() giode.Element {
-	icon, btn := "circle-alert", c.ok
-	if c.req.Destructive {
-		icon, btn = "triangle-alert", c.danger
-	}
-	body := giode.Text(c.req.Message, theme.Body.With(giode.Styles{Color: theme.Muted, LineHeight: 20}))
-	return widgets.DialogFrame(icon, c.req.Title, "", 420, body, c.cancel, btn)
-}
-
-// decline runs the pending request's OnCancel.
-func (c *Confirm) decline() {
-	if c.pending {
-		c.pending = false
-		if c.req.OnCancel != nil {
-			giode.AfterLayout(c.req.OnCancel)
-		}
-	}
-}
-
-// Layout draws the dialog while it's open.
-func (c *Confirm) Layout(gtx layout.Context) layout.Dimensions {
-	dims := c.dialog.Layout(gtx)
-	if !c.open {
-		c.decline() // canceled, or dismissed with Escape or a click outside
-	}
-	return dims
 }

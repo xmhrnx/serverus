@@ -5,15 +5,11 @@ package transport
 
 import (
 	"context"
-	"errors"
 	"io"
 	"time"
 
 	"github.com/xmhrnx/serverus/internal/domain"
 )
-
-// ErrUnsupported is returned when a connection lacks a capability.
-var ErrUnsupported = errors.New("not supported by this connection")
 
 // Conn is an open connection to a server. Implementations add the
 // capability interfaces below that their protocol supports.
@@ -57,14 +53,4 @@ type Output struct {
 	Stderr   []byte
 	ExitCode int
 	Duration time.Duration
-}
-
-// Forwarder opens TCP connections from the server's side, for tunnels.
-type Forwarder interface {
-	DialRemote(ctx context.Context, address string) (io.ReadWriteCloser, error)
-}
-
-// Pinger measures the round trip to the server.
-type Pinger interface {
-	Ping(ctx context.Context) (time.Duration, error)
 }

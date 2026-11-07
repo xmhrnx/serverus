@@ -9,15 +9,15 @@ import (
 	"github.com/xmhrnx/serverus/internal/transport"
 )
 
-// ErrNotLinux is returned by ScriptSource when the server isn't Linux:
-// the probe reads Linux's /proc and /sys.
-var ErrNotLinux = errors.New("resource monitoring needs a Linux server")
-
 // ScriptSource samples a remote Linux server by running a shell script
 // over the connection.
 type ScriptSource struct {
 	Exec transport.Executor
 }
+
+// ErrNotLinux is returned by ScriptSource when the server isn't Linux:
+// the probe reads Linux's /proc and /sys.
+var ErrNotLinux = errors.New("resource monitoring needs a Linux server")
 
 // Sample runs the probe and parses its output.
 func (s ScriptSource) Sample(ctx context.Context) (Reading, error) {

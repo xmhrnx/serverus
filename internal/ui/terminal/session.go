@@ -52,19 +52,3 @@ func (s *Session) Resize(cols, rows int) { _ = s.shell.Resize(cols, rows) }
 
 // Done is closed when the shell exits or the connection drops.
 func (s *Session) Done() <-chan struct{} { return s.done }
-
-// Ended reports whether the session is over.
-func (s *Session) Ended() bool {
-	select {
-	case <-s.done:
-		return true
-	default:
-		return false
-	}
-}
-
-// Err is why the session ended, nil for a normal exit.
-func (s *Session) Err() error { return s.err }
-
-// Close ends the session.
-func (s *Session) Close() { s.finish(nil) }

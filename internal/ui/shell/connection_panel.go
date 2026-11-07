@@ -47,12 +47,3 @@ func (c *ConnectionPanel) Layout(gtx layout.Context) layout.Dimensions {
 	}
 	return widgets.EmptyState("plug", "Not connected", "Connect to "+s.Name+" to monitor it, open terminals and manage its files.", c.withWake(c.connect)...).Layout(gtx)
 }
-
-// withWake adds the Wake-on-LAN button to actions when the server has a
-// MAC address.
-func (c *ConnectionPanel) withWake(actions ...giode.Element) []giode.Element {
-	if w := c.power.WakeButton(); w != nil {
-		actions = append(actions, w)
-	}
-	return actions
-}

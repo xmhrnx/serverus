@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-// ErrSecretNotFound is returned by a SecretStore that holds nothing
-// under the asked key.
-var ErrSecretNotFound = errors.New("secret not found")
-
 // SecretStore keeps credentials in the platform's keychain. The app
 // passes giode's SecureStore; tests pass a map.
 type SecretStore interface {
@@ -21,6 +17,10 @@ type SecretStore interface {
 type Secrets struct {
 	Store SecretStore
 }
+
+// ErrSecretNotFound is returned by a SecretStore that holds nothing
+// under the asked key.
+var ErrSecretNotFound = errors.New("secret not found")
 
 // PasswordKey is the key of a server's password.
 func PasswordKey(serverID string) string { return fmt.Sprintf("server/%s/password", serverID) }
@@ -49,22 +49,4 @@ func (s Secrets) Set(key, value string) error {
 		return s.Delete(key)
 	}
 	return s.Store.Set(key, []byte(value))
-}
-
-// Delete removes the secret. Deleting a missing secret is not an error.
-func (s Secrets) Delete(key string) error {
-	if s.Store == nil {
-		return nil
-	}
-	err := s.Store.Delete(key)
-	if err != nil && errors.Is(err, ErrSecretNotFound) {
-		return nil
-	}
-	return err
-}
-
-// ForgetServer deletes every secret of a server.
-func (s Secrets) ForgetServer(serverID string) {
-	_ = s.Delete(PasswordKey(serverID))
-	_ = s.Delete(PassphraseKey(serverID))
 }

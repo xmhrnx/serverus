@@ -4,12 +4,8 @@
 package env
 
 import (
-	"errors"
-	"time"
-
 	"github.com/xmhrnx/giode"
 
-	"github.com/xmhrnx/serverus/internal/ops"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/storage"
 	"github.com/xmhrnx/serverus/internal/transfer"
@@ -57,37 +53,4 @@ func (e *Env) Confirm(c Confirmation) {
 		return
 	}
 	e.confirm(c)
-}
-
-// Async runs work off the UI goroutine and then done on it with work's
-// error. done may be nil.
-func (e *Env) Async(work func() error, done func(err error)) {
-	go func() {
-		err := work()
-		if done != nil {
-			e.App.Post(func() { done(err) })
-		}
-	}()
-}
-
-// Invalidate requests a redraw; safe from any goroutine.
-func (e *Env) Invalidate() { e.App.Invalidate() }
-
-// Success shows a confirmation toast.
-func (e *Env) Success(msg string) { e.Toasts.Show(giode.ToastSuccess, msg) }
-
-// Info shows an informational toast.
-func (e *Env) Info(msg string) { e.Toasts.Show(giode.ToastInfo, msg) }
-
-// Fail shows an error toast prefixed with what failed.
-func (e *Env) Fail(what string, err error) {
-	if err == nil || errors.Is(err, ops.ErrCanceled) {
-		return
-	}
-	e.Toasts.Show(giode.ToastError, what+": "+err.Error())
-}
-
-// MetricsInterval is the configured sampling interval.
-func (e *Env) MetricsInterval() time.Duration {
-	return time.Duration(e.Repo.Settings().RefreshSeconds) * time.Second
 }

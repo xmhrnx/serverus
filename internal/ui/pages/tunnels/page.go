@@ -1,7 +1,6 @@
 package tunnels
 
 import (
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/scroll"
 
@@ -53,109 +52,4 @@ func (p *Page) find(id string) (domain.Tunnel, bool) {
 		}
 	}
 	return domain.Tunnel{}, false
-}
-
-func (p *Page) toggle(t domain.Tunnel) {
-	if p.env.Tunnels.Status(t.ID).Running {
-		p.env.Tunnels.Stop(t.ID)
-		return
-	}
-	fw, err := p.session.Forwarder()
-	if err != nil {
-		p.env.Fail("Open "+t.Name, err)
-		return
-	}
-	if err := p.env.Tunnels.Start(t, fw); err != nil {
-		p.env.Fail("Open "+t.Name, err)
-		return
-	}
-	p.env.Success("Tunnel open on " + t.LocalAddress())
-}
-
-func (p *Page) content() giode.Element {
-	tunnels := p.env.Repo.Tunnels(p.session.Server().ID)
-	rows := []giode.Element{}
-	for _, t := range tunnels {
-		id := t.ID
-		st := p.env.Tunnels.Status(id)
-		toggle := p.toggles.Get(id, func() *widgets.ToolButton {
-			return widgets.NewToolButton("play", "Open", func() {
-				if t, ok := p.find(id); ok {
-					p.toggle(t)
-				}
-			})
-		})
-		if st.Running {
-			toggle.SetIcon("square")
-			toggle.SetTooltip("Close")
-		} else {
-			toggle.SetIcon("play")
-			toggle.SetTooltip("Open")
-		}
-		edit := p.edits.Get(id, func() *widgets.ToolButton {
-			return widgets.NewToolButton("pencil", "Edit", func() {
-				if t, ok := p.find(id); ok {
-					p.dialog.Edit(t)
-				}
-			})
-		})
-		copyAddr := p.copies.Get(id, func() *widgets.ToolButton {
-			return widgets.NewToolButton("copy", "Copy local address", func() {
-				if t, ok := p.find(id); ok {
-					p.env.App.SetClipboard(t.LocalAddress())
-					p.env.Info("Copied " + t.LocalAddress())
-				}
-			})
-		})
-		del := p.deletes.Get(id, func() *widgets.ToolButton {
-			return widgets.NewToolButton("trash-2", "Delete", func() {
-				t, ok := p.find(id)
-				if !ok {
-					return
-				}
-				p.env.Confirm(env.Confirmation{
-					Title: "Delete " + t.Name + "?", Message: "The tunnel " + t.Describe() + " is closed and forgotten.",
-					Action: "Delete", Destructive: true,
-					OnConfirm: func() {
-						p.env.Tunnels.Stop(id)
-						_ = p.env.Repo.DeleteTunnel(id)
-					},
-				})
-			}).Tint(theme.Danger)
-		})
-		rows = append(rows, tunnelRow(t, st, toggle, copyAddr, edit, del))
-	}
-	pad := giode.UniformInset(theme.Space4)
-	if giode.Compact() {
-		pad = giode.UniformInset(theme.Space2)
-	}
-	return giode.Stack(giode.Styles{Gap: theme.Space3, Width: -1, Padding: pad}, rows...)
-}
-
-// Layout draws the page.
-func (p *Page) Layout(gtx layout.Context) layout.Dimensions {
-	if len(p.env.Repo.Tunnels(p.session.Server().ID)) == 0 {
-		return widgets.WithOverlays(
-			widgets.EmptyState("cable", "No tunnels yet",
-				"Reach a database, admin panel or any service that only listens on the server's private network, as if it ran on this computer.",
-				p.add),
-			p.dialog,
-		).Layout(gtx)
-	}
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1},
-		p.header(),
-		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, p.scroll),
-	), p.dialog).Layout(gtx)
-}
-
-// header explains tunnels next to the add button; on a phone the button
-// shrinks to an icon so the sentence keeps its width.
-func (p *Page) header() giode.Element {
-	add, pad := giode.Element(p.add), giode.Inset{Left: theme.Space4, Right: theme.Space4, Top: theme.Space4}
-	if giode.Compact() {
-		add, pad = p.addIcon, giode.Inset{Left: theme.Space3, Right: theme.Space2, Top: theme.Space2}
-	}
-	return giode.Row(giode.Styles{Width: -1, Gap: theme.Space3, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap, Padding: pad},
-		giode.Box(giode.Styles{FlexGrow: 1}, giode.Text("Forward local ports through this server. Tunnels close when it disconnects.", theme.Caption)),
-		add)
 }

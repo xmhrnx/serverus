@@ -44,36 +44,3 @@ func (m *Manager) Lookup(id string) (*Session, bool) {
 	s, ok := m.sessions[id]
 	return s, ok
 }
-
-// Remove disconnects and forgets a server's session.
-func (m *Manager) Remove(id string) {
-	m.mu.Lock()
-	s, ok := m.sessions[id]
-	delete(m.sessions, id)
-	m.mu.Unlock()
-	if ok {
-		s.Disconnect()
-	}
-}
-
-// SetInterval changes the metrics interval of every session.
-func (m *Manager) SetInterval(d time.Duration) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, s := range m.sessions {
-		s.SetInterval(d)
-	}
-}
-
-// DisconnectAll closes every connection, at shutdown.
-func (m *Manager) DisconnectAll() {
-	m.mu.Lock()
-	all := make([]*Session, 0, len(m.sessions))
-	for _, s := range m.sessions {
-		all = append(all, s)
-	}
-	m.mu.Unlock()
-	for _, s := range all {
-		s.Disconnect()
-	}
-}

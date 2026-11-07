@@ -4,13 +4,8 @@
 package theme
 
 import (
-	"image/color"
-	"math"
-	"strconv"
-
 	"github.com/xmhrnx/giode"
 
-	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/ui/terminal"
 )
 
@@ -52,46 +47,3 @@ func palette(status giode.Palette, s Surfaces, primary giode.Color) giode.Palett
 	p.Text, p.Muted, p.Secondary = s.Text, s.Muted, s.Secondary
 	return p
 }
-
-// onColor is white or near-black, whichever reads better on c.
-func onColor(c giode.Color) giode.Color {
-	v := rgb(c)
-	lum := 0.2126*linear(v.R) + 0.7152*linear(v.G) + 0.0722*linear(v.B)
-	if lum > 0.4 {
-		return "#0b0d12"
-	}
-	return "#ffffff"
-}
-
-func linear(c uint8) float64 {
-	f := float64(c) / 255
-	if f <= 0.04045 {
-		return f / 12.92
-	}
-	return math.Pow((f+0.055)/1.055, 2.4)
-}
-
-// rgb parses a "#rrggbb" color.
-func rgb(c giode.Color) color.NRGBA {
-	v, _ := strconv.ParseUint(string(c)[1:], 16, 32)
-	return color.NRGBA{R: uint8(v >> 16), G: uint8(v >> 8), B: uint8(v), A: 0xff}
-}
-
-// Apply switches to the theme the user chose.
-func Apply(t domain.Theme) {
-	switch t {
-	case domain.ThemeLight:
-		giode.SetMode(giode.ModeLight)
-	case domain.ThemeSystem:
-		if dark, err := giode.SystemDarkMode(); err == nil && !dark {
-			giode.SetMode(giode.ModeLight)
-			return
-		}
-		giode.SetMode(giode.ModeDark)
-	default:
-		giode.SetMode(giode.ModeDark)
-	}
-}
-
-// IsDark reports whether dark mode is showing.
-func IsDark() bool { return giode.CurrentMode() == giode.ModeDark }

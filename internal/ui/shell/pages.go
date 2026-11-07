@@ -9,6 +9,17 @@ import (
 // PageKind identifies a page of the server workspace.
 type PageKind int
 
+// pageSpec describes a page: its tab and the capability it needs.
+type pageSpec struct {
+	kind  PageKind
+	label string
+	icon  string
+	needs domain.Capability
+	// localOK is false for pages that manage only remote (Linux)
+	// servers unless this computer runs Linux too.
+	localOK bool
+}
+
 const (
 	PageOverview PageKind = iota
 	PageTerminal
@@ -21,17 +32,6 @@ const (
 	PageSnippets
 )
 
-// pageSpec describes a page: its tab and the capability it needs.
-type pageSpec struct {
-	kind  PageKind
-	label string
-	icon  string
-	needs domain.Capability
-	// localOK is false for pages that manage only remote (Linux)
-	// servers unless this computer runs Linux too.
-	localOK bool
-}
-
 var pageSpecs = []pageSpec{
 	{PageOverview, "Overview", "gauge", domain.CapExec, true},
 	{PageTerminal, "Terminal", "terminal", domain.CapTerminal, true},
@@ -42,16 +42,4 @@ var pageSpecs = []pageSpec{
 	{PageDocker, "Docker", "container", domain.CapExec, true},
 	{PageTunnels, "Tunnels", "cable", domain.CapForward, true},
 	{PageSnippets, "Snippets", "scroll-text", domain.CapExec, true},
-}
-
-// availablePages lists the pages a protocol supports.
-func availablePages(p domain.Protocol) []pageSpec {
-	caps := p.Capabilities()
-	var out []pageSpec
-	for _, s := range pageSpecs {
-		if caps.Has(s.needs) && (s.localOK || p != domain.ProtocolLocal) {
-			out = append(out, s)
-		}
-	}
-	return out
 }

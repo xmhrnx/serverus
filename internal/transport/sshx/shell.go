@@ -50,10 +50,4 @@ func (c *Conn) OpenShell(ctx context.Context, cols, rows int) (transport.Shell, 
 	return &shell{session: s, stdin: stdin, stdout: stdout}, nil
 }
 
-func (s *shell) Read(p []byte) (int, error)  { return s.stdout.Read(p) }
-func (s *shell) Write(p []byte) (int, error) { return s.stdin.Write(p) }
-func (s *shell) Close() error                { return s.session.Close() }
-
-func (s *shell) Resize(cols, rows int) error {
-	return s.session.WindowChange(rows, cols)
-}
+func (s *shell) Read(p []byte) (int, error) { return s.stdout.Read(p) }

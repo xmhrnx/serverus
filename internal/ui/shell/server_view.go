@@ -1,24 +1,12 @@
 package shell
 
 import (
-	"slices"
-
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 
-	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/session"
 	"github.com/xmhrnx/serverus/internal/ui/env"
-	"github.com/xmhrnx/serverus/internal/ui/pages/docker"
-	"github.com/xmhrnx/serverus/internal/ui/pages/drives"
 	"github.com/xmhrnx/serverus/internal/ui/pages/files"
-	"github.com/xmhrnx/serverus/internal/ui/pages/overview"
-	"github.com/xmhrnx/serverus/internal/ui/pages/processes"
-	"github.com/xmhrnx/serverus/internal/ui/pages/services"
-	"github.com/xmhrnx/serverus/internal/ui/pages/snippets"
 	"github.com/xmhrnx/serverus/internal/ui/pages/terminal"
-	"github.com/xmhrnx/serverus/internal/ui/pages/tunnels"
-	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 // ServerView is the workspace of one server: its header, page tabs and
@@ -55,107 +43,3 @@ func NewServerView(e *env.Env, sess *session.Session, onEdit func()) *ServerView
 
 // Show switches to a page.
 func (v *ServerView) Show(k PageKind) { v.active = k }
-
-// page returns the page of kind k, creating it on first use.
-func (v *ServerView) page(k PageKind) giode.Element {
-	if p, ok := v.pages[k]; ok {
-		return p
-	}
-	var p giode.Element
-	switch k {
-	case PageOverview:
-		p = overview.New(v.env, v.sess)
-	case PageTerminal:
-		v.terminal = terminal.New(v.env, v.sess)
-		p = v.terminal
-	case PageFiles:
-		v.files = files.New(v.env, v.sess)
-		p = v.files
-	case PageProcesses:
-		p = processes.New(v.env, v.sess)
-	case PageServices:
-		p = services.New(v.env, v.sess)
-	case PageDrives:
-		p = drives.New(v.env, v.sess, v.openFolder)
-	case PageDocker:
-		p = docker.New(v.env, v.sess)
-	case PageTunnels:
-		p = tunnels.New(v.env, v.sess)
-	case PageSnippets:
-		p = snippets.New(v.env, v.sess, v.typeInTerminal)
-	}
-	v.pages[k] = p
-	return p
-}
-
-// ShowNth switches to the n-th page in the tab row, counting from 1.
-func (v *ServerView) ShowNth(n int) {
-	if specs := availablePages(v.sess.Server().Protocol); n >= 1 && n <= len(specs) {
-		v.active = specs[n-1].kind
-	}
-}
-
-// NewTerminalTab switches to the terminal and opens a tab, if the
-// server has terminals and is connected.
-func (v *ServerView) NewTerminalTab() {
-	if !v.sess.Capabilities().Has(domain.CapTerminal) {
-		return
-	}
-	if st, _ := v.sess.State(); st != session.Connected {
-		return
-	}
-	v.active = PageTerminal
-	v.page(PageTerminal)
-	v.terminal.NewTab()
-}
-
-// openFolder shows dir in the file manager.
-func (v *ServerView) openFolder(dir string) {
-	v.active = PageFiles
-	v.page(PageFiles)
-	v.files.Navigate(dir)
-}
-
-// typeInTerminal switches to the terminal and types text into it.
-func (v *ServerView) typeInTerminal(text string) {
-	v.active = PageTerminal
-	v.page(PageTerminal)
-	v.terminal.SendText(text)
-}
-
-// HandleDrop uploads dropped files when the file manager is showing.
-func (v *ServerView) HandleDrop(paths []string) bool {
-	if v.active != PageFiles || v.files == nil {
-		return false
-	}
-	if st, _ := v.sess.State(); st != session.Connected {
-		return false
-	}
-	v.files.HandleDrop(paths)
-	return true
-}
-
-// Close ends the view's shells, when the server is deleted.
-func (v *ServerView) Close() {
-	if v.terminal != nil {
-		v.terminal.Close()
-	}
-}
-
-// Layout draws the workspace.
-func (v *ServerView) Layout(gtx layout.Context) layout.Dimensions {
-	specs := availablePages(v.sess.Server().Protocol)
-	v.nav.SetPages(specs)
-	if !slices.ContainsFunc(specs, func(s pageSpec) bool { return s.kind == v.active }) && len(specs) > 0 {
-		v.active = specs[0].kind
-	}
-	var body giode.Element = v.panel
-	if st, _ := v.sess.State(); st == session.Connected {
-		body = v.page(v.active)
-	}
-	return widgets.WithOverlays(giode.Stack(giode.Styles{Width: -1, Height: -1},
-		v.topbar,
-		v.nav,
-		giode.Box(giode.Styles{Width: -1, FlexGrow: 1, Height: -1}, body),
-	), v.power.Overlays()...).Layout(gtx)
-}

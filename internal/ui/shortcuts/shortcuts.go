@@ -2,6 +2,12 @@
 // that registers them and the settings page that explains them agree.
 package shortcuts
 
+// Entry is a shortcut and what it does, for the settings page.
+type Entry struct {
+	Spec string
+	Does string
+}
+
 // Key specs, in giode.Shortcut's format. Mod is Command on macOS and Ctrl
 // elsewhere.
 const (
@@ -12,12 +18,6 @@ const (
 	// Page is Mod plus the page's position in the tab row, 1 to 9.
 	Page = "Mod+"
 )
-
-// Entry is a shortcut and what it does, for the settings page.
-type Entry struct {
-	Spec string
-	Does string
-}
 
 // Help lists every shortcut.
 var Help = []Entry{

@@ -5,7 +5,6 @@ package transfer
 import (
 	"context"
 	"io"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,29 +13,8 @@ import (
 // Direction says which way a job moves data.
 type Direction int
 
-const (
-	Upload Direction = iota
-	Download
-)
-
 // State is where a job is in its life.
 type State int
-
-const (
-	Queued State = iota
-	Running
-	Done
-	Failed
-	Canceled
-)
-
-// Label is the state's display name.
-func (s State) Label() string {
-	return [...]string{"Queued", "Transferring", "Done", "Failed", "Canceled"}[s]
-}
-
-// Finished reports whether the job won't change any more.
-func (s State) Finished() bool { return s >= Done }
 
 // Job is one file being copied. Open functions are called when the job
 // starts, on its goroutine.
@@ -72,123 +50,7 @@ type Status struct {
 	Finished    time.Time
 }
 
-// Status returns the job's progress.
-func (j *Job) Status() Status {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-	return Status{State: j.state, Err: j.err, Transferred: j.done.Load(), Started: j.started, Finished: j.finished}
-}
-
-// Progress is the fraction done, 0-1; 0 when the size is unknown.
-func (s Status) Progress(size int64) float64 {
-	if size <= 0 {
-		if s.State == Done {
-			return 1
-		}
-		return 0
-	}
-	return min(1, float64(s.Transferred)/float64(size))
-}
-
-// Rate is the average speed in bytes per second.
-func (s Status) Rate() float64 {
-	end := s.Finished
-	if end.IsZero() {
-		end = time.Now()
-	}
-	secs := end.Sub(s.Started).Seconds()
-	if s.Started.IsZero() || secs <= 0 {
-		return 0
-	}
-	return float64(s.Transferred) / secs
-}
-
-func (j *Job) setState(st State, err error) {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-	j.state, j.err = st, err
-	switch st {
-	case Running:
-		j.started = time.Now()
-	case Done, Failed, Canceled:
-		j.finished = time.Now()
-	}
-}
-
-// run copies source to destination, counting bytes as they go.
-func (j *Job) run(ctx context.Context) error {
-	src, err := j.OpenSource()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-	dst, err := j.OpenDest()
-	if err != nil {
-		return err
-	}
-	err = j.copy(ctx, dst, src)
-	if cerr := dst.Close(); err == nil {
-		err = cerr
-	}
-	return err
-}
-
-// copy moves src to dst through whichever side can pipeline: an SFTP
-// file sends many requests at once from ReadFrom and WriteTo, where a
-// plain 32 KB copy waits a round trip for every chunk.
-func (j *Job) copy(ctx context.Context, dst io.Writer, src io.Reader) error {
-	_, srcIsLocal := src.(*os.File)
-	_, dstIsLocal := dst.(*os.File)
-	if wt, ok := src.(io.WriterTo); ok && !srcIsLocal {
-		_, err := wt.WriteTo(&countingWriter{w: dst, n: &j.done, ctx: ctx})
-		return err
-	}
-	if rf, ok := dst.(io.ReaderFrom); ok && !dstIsLocal {
-		_, err := rf.ReadFrom(&countingReader{r: src, n: &j.done, ctx: ctx, size: j.Size})
-		return err
-	}
-	_, err := io.Copy(&countingWriter{w: dst, n: &j.done, ctx: ctx}, src)
-	return err
-}
-
-// countingReader counts bytes and stops the copy when ctx ends. Size
-// tells an SFTP file how many requests it may keep in flight.
-type countingReader struct {
-	r    io.Reader
-	n    *atomic.Int64
-	ctx  context.Context
-	size int64
-}
-
-func (c *countingReader) Read(p []byte) (int, error) {
-	if err := c.ctx.Err(); err != nil {
-		return 0, err
-	}
-	n, err := c.r.Read(p)
-	c.n.Add(int64(n))
-	return n, err
-}
-
-// Size is the bytes left to read, or -1 when unknown.
-func (c *countingReader) Size() int64 {
-	if c.size < 0 {
-		return -1
-	}
-	return max(0, c.size-c.n.Load())
-}
-
-// countingWriter counts bytes and stops the copy when ctx ends.
-type countingWriter struct {
-	w   io.Writer
-	n   *atomic.Int64
-	ctx context.Context
-}
-
-func (c *countingWriter) Write(p []byte) (int, error) {
-	if err := c.ctx.Err(); err != nil {
-		return 0, err
-	}
-	n, err := c.w.Write(p)
-	c.n.Add(int64(n))
-	return n, err
-}
+const (
+	Upload Direction = iota
+	Download
+)

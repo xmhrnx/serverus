@@ -1,9 +1,7 @@
 package telnet
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"net"
 	"sync"
 	"time"
@@ -49,76 +47,4 @@ func (c *Conn) Capabilities() domain.Capability { return domain.ProtocolTelnet.C
 func (c *Conn) Wait() error {
 	<-c.done
 	return c.err
-}
-
-// Close ends the connection.
-func (c *Conn) Close() error {
-	var err error
-	c.closeOnce.Do(func() {
-		err = c.nc.Close()
-		close(c.done)
-	})
-	return err
-}
-
-// OpenShell returns the session. Telnet carries a single session, so a
-// second shell can't be opened while the first is open.
-func (c *Conn) OpenShell(ctx context.Context, cols, rows int) (transport.Shell, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.opened {
-		return nil, errors.New("telnet carries one session: close the open terminal first")
-	}
-	c.opened = true
-	c.neg.resize(cols, rows)
-	return &shell{c: c}, nil
-}
-
-// shell reads and writes the connection, negotiating options on the way.
-type shell struct {
-	c   *Conn
-	buf []byte
-}
-
-func (s *shell) Read(p []byte) (int, error) {
-	for {
-		if s.buf == nil {
-			s.buf = make([]byte, 32*1024)
-		}
-		// Filtering only shrinks data, so reading at most len(p) bytes
-		// always fits.
-		n, err := s.c.nc.Read(s.buf[:min(len(s.buf), len(p))])
-		if n > 0 {
-			data := s.c.neg.filter(s.buf[:n])
-			if len(data) > 0 {
-				return copy(p, data), nil
-			}
-		}
-		if err != nil {
-			s.c.err = err
-			s.c.Close()
-			return 0, err
-		}
-	}
-}
-
-// Write sends keystrokes, doubling 0xFF bytes as Telnet requires.
-func (s *shell) Write(p []byte) (int, error) {
-	data := bytes.ReplaceAll(p, []byte{cmdIAC}, []byte{cmdIAC, cmdIAC})
-	if _, err := s.c.nc.Write(data); err != nil {
-		return 0, err
-	}
-	return len(p), nil
-}
-
-func (s *shell) Resize(cols, rows int) error {
-	s.c.neg.resize(cols, rows)
-	return nil
-}
-
-func (s *shell) Close() error {
-	s.c.mu.Lock()
-	s.c.opened = false
-	s.c.mu.Unlock()
-	return s.c.Close()
 }

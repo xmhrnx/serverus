@@ -3,9 +3,6 @@
 package snippets
 
 import (
-	"strings"
-
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/dialog"
 	"github.com/xmhrnx/giode/components/input"
@@ -57,39 +54,3 @@ func (d *EditDialog) load(s domain.Snippet, isNew bool) {
 	d.open = true
 	d.name.Focus()
 }
-
-func (d *EditDialog) submit() {
-	s := d.editing
-	s.Name = strings.TrimSpace(d.name.Text())
-	s.Command = strings.TrimSpace(d.command.Text())
-	s.Description = strings.TrimSpace(d.description.Text())
-	if s.Name == "" || s.Command == "" {
-		d.err = "A snippet needs a name and a command."
-		return
-	}
-	if err := d.onSave(s); err != nil {
-		d.err = err.Error()
-		return
-	}
-	d.open = false
-}
-
-func (d *EditDialog) content() giode.Element {
-	title := "New snippet"
-	if !d.isNew {
-		title = "Edit snippet"
-	}
-	rows := []giode.Element{}
-	if d.err != "" {
-		rows = append(rows, widgets.Banner("circle-alert", theme.Danger, d.err))
-	}
-	rows = append(rows,
-		widgets.FormField("Name", "", d.name),
-		widgets.FormField("Command", "Runs with the server's sh; several lines run as a script", d.command),
-		widgets.FormField("Description", "", d.description),
-	)
-	return widgets.DialogFrame("scroll-text", title, "", 560, giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1}, rows...), d.cancel, d.save)
-}
-
-// Layout draws the dialog while it's open.
-func (d *EditDialog) Layout(gtx layout.Context) layout.Dimensions { return d.dialog.Layout(gtx) }

@@ -3,10 +3,6 @@
 package tunnels
 
 import (
-	"strconv"
-	"strings"
-
-	"gioui.org/layout"
 	"github.com/xmhrnx/giode"
 	"github.com/xmhrnx/giode/components/dialog"
 	"github.com/xmhrnx/giode/components/input"
@@ -53,70 +49,3 @@ func (d *Dialog) Add(serverID string) {
 
 // Edit opens the editor for t.
 func (d *Dialog) Edit(t domain.Tunnel) { d.load(t, false) }
-
-func (d *Dialog) load(t domain.Tunnel, isNew bool) {
-	d.editing, d.isNew, d.err = t, isNew, ""
-	d.name.SetText(t.Name)
-	d.bind.SetText(t.BindHost)
-	d.host.SetText(t.RemoteHost)
-	d.local.SetText(portText(t.LocalPort))
-	d.remote.SetText(portText(t.RemotePort))
-	d.auto.SetChecked(t.AutoStart)
-	d.open = true
-	d.name.Focus()
-}
-
-func portText(p int) string {
-	if p == 0 {
-		return ""
-	}
-	return strconv.Itoa(p)
-}
-
-func (d *Dialog) submit() {
-	t := d.editing
-	t.Name = strings.TrimSpace(d.name.Text())
-	t.BindHost = strings.TrimSpace(d.bind.Text())
-	t.RemoteHost = strings.TrimSpace(d.host.Text())
-	t.LocalPort, _ = strconv.Atoi(strings.TrimSpace(d.local.Text()))
-	t.RemotePort, _ = strconv.Atoi(strings.TrimSpace(d.remote.Text()))
-	t.AutoStart = d.auto.Checked()
-	if t.Name == "" {
-		t.Name = t.Describe()
-	}
-	if err := t.Validate(); err != nil {
-		d.err = err.Error()
-		return
-	}
-	if err := d.onSave(t); err != nil {
-		d.err = err.Error()
-		return
-	}
-	d.open = false
-}
-
-func (d *Dialog) content() giode.Element {
-	title := "New tunnel"
-	if !d.isNew {
-		title = "Edit tunnel"
-	}
-	rows := []giode.Element{}
-	if d.err != "" {
-		rows = append(rows, widgets.Banner("circle-alert", theme.Danger, d.err))
-	}
-	rows = append(rows,
-		widgets.FormField("Name", "", d.name),
-		widgets.Columns([]int{3, 1},
-			widgets.FormField("Listen on", "This computer's address; 127.0.0.1 keeps it private", d.bind),
-			widgets.FormField("Local port", "", d.local)),
-		widgets.Columns([]int{3, 1},
-			widgets.FormField("Destination host", "As the server sees it: localhost, db.internal, 10.0.0.5", d.host),
-			widgets.FormField("Port", "", d.remote)),
-		d.auto,
-	)
-	return widgets.DialogFrame("cable", title, "Forward a local port through this server (ssh -L)", 520,
-		giode.Stack(giode.Styles{Gap: theme.Space4, Width: -1}, rows...), d.cancel, d.save)
-}
-
-// Layout draws the dialog while it's open.
-func (d *Dialog) Layout(gtx layout.Context) layout.Dimensions { return d.dialog.Layout(gtx) }
