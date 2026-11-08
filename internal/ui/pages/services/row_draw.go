@@ -31,7 +31,7 @@ func (p *Page) row(i int) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if s, ok := p.lookup(unit); ok {
 				p.selected, p.target = unit, s
-				p.menu.OpenAt(widgets.ClickPoint(e))
+				p.menu.OpenAtClick(e)
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {

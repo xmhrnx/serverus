@@ -2,8 +2,6 @@ package files
 
 import (
 	"github.com/xmhrnx/giode"
-
-	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 func (p *Page) row(i int) giode.Element {
@@ -18,7 +16,7 @@ func (p *Page) row(i int) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if cur, ok := p.lookup(name); ok {
 				p.selected, p.target = name, cur
-				p.menu.OpenAt(widgets.ClickPoint(e))
+				p.menu.OpenAtClick(e)
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {

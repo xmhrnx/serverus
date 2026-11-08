@@ -4,7 +4,6 @@ import (
 	"github.com/xmhrnx/giode"
 
 	"github.com/xmhrnx/serverus/internal/domain"
-	"github.com/xmhrnx/serverus/internal/ui/widgets"
 )
 
 func (s *Sidebar) item(srv domain.Server) giode.Element {
@@ -13,7 +12,7 @@ func (s *Sidebar) item(srv domain.Server) giode.Element {
 		openMenu := func(e giode.ClickEvent) {
 			if cur, ok := s.env.Repo.Server(id); ok {
 				s.target = cur
-				s.menu.OpenAt(widgets.ClickPoint(e))
+				s.menu.OpenAtClick(e)
 			}
 		}
 		return giode.Pressable(func(ps giode.PressState) giode.Element {
