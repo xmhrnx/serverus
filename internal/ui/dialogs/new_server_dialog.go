@@ -46,5 +46,9 @@ func NewServerDialog(e *env.Env, creds transport.Credentials, dialers DialerFact
 	d.save = widgets.Button(widgets.Primary, "Save server", "check").OnClick(d.submit)
 	d.body = giode.Scroll(d.form, giode.Styles{ScrollBar: giode.ScrollBar{AutoHide: true, Width: 6}}).FitContent(true)
 	d.dialog = giode.Dialog(&d.open, d.content, widgets.DialogPanel)
+	d.sheetCancel = widgets.WideButton(widgets.Secondary, "Cancel", "").OnClick(func() { d.open = false })
+	d.sheetSave = widgets.WideButton(widgets.Primary, "Save server", "check").OnClick(d.submit)
+	d.sheet = giode.Sheet(&d.open, d.form, giode.Styles{Background: theme.Surface, Color: theme.Text}).
+		Footer(d.sheetFooter).Detents(giode.DetentLarge)
 	return d
 }

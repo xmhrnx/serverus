@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xmhrnx/giode"
+
 	"github.com/xmhrnx/serverus/internal/domain"
 	"github.com/xmhrnx/serverus/internal/storage"
 )
@@ -42,6 +44,13 @@ func (d *ServerDialog) load(s domain.Server, isNew bool) {
 	d.buildJumpHosts(s)
 	d.syncPort()
 	d.body.ScrollTo(0)
+	if isNew {
+		d.sheet.Title("Add a server")
+	} else {
+		d.sheet.Title("Edit " + s.Name)
+	}
 	d.open = true
-	d.name.Focus()
+	if !giode.TouchInput() {
+		d.name.Focus() // on a phone, the keyboard would cover the sheet at once
+	}
 }

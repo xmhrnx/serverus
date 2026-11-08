@@ -7,6 +7,7 @@ import (
 	"github.com/xmhrnx/giode/components/input"
 	"github.com/xmhrnx/giode/components/scroll"
 	"github.com/xmhrnx/giode/components/segmented"
+	"github.com/xmhrnx/giode/components/sheet"
 	"github.com/xmhrnx/giode/components/toggle"
 
 	"github.com/xmhrnx/serverus/internal/domain"
@@ -45,4 +46,8 @@ type ServerDialog struct {
 	browse, test, cancel, save *giode.ButtonElement
 	body                       *scroll.Scroll
 	dialog                     *dialog.Dialog
+	// sheet shows the same form on phones, sliding up from the bottom.
+	sheet *sheet.Sheet
+	// The sheet's own buttons fill its width.
+	sheetCancel, sheetSave *giode.ButtonElement
 }

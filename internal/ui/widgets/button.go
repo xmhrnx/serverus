@@ -29,16 +29,27 @@ var buttonBase = giode.Styles{
 // Button returns a themed button of the given kind, with an optional
 // leading icon.
 func Button(kind ButtonKind, label, icon string) *giode.ButtonElement {
+	return button(kind, label, icon, giode.Styles{})
+}
+
+// WideButton is Button filling the width it's given, for the actions
+// of a phone's bottom sheet.
+func WideButton(kind ButtonKind, label, icon string) *giode.ButtonElement {
+	return button(kind, label, icon, giode.Styles{Width: -1, Justify: giode.JustifyCenter})
+}
+
+func button(kind ButtonKind, label, icon string, extra giode.Styles) *giode.ButtonElement {
+	base := buttonBase.With(extra)
 	var b *giode.ButtonElement
 	switch kind {
 	case Secondary:
-		b = giode.Button(label, buttonBase.With(giode.Styles{Background: theme.Text, Color: theme.Text, BorderColor: theme.Border})).Variant(giode.VariantOutlined)
+		b = giode.Button(label, base.With(giode.Styles{Background: theme.Text, Color: theme.Text, BorderColor: theme.Border})).Variant(giode.VariantOutlined)
 	case Ghost:
-		b = giode.Button(label, buttonBase.With(giode.Styles{Background: theme.Text, Color: theme.Muted})).Variant(giode.VariantGhost)
+		b = giode.Button(label, base.With(giode.Styles{Background: theme.Text, Color: theme.Muted})).Variant(giode.VariantGhost)
 	case Danger:
-		b = giode.Button(label, buttonBase.With(giode.Styles{Background: theme.Danger, Color: "#ffffff"}))
+		b = giode.Button(label, base.With(giode.Styles{Background: theme.Danger, Color: "#ffffff"}))
 	default:
-		b = giode.Button(label, buttonBase.With(giode.Styles{Background: theme.Primary, Color: theme.OnPrimary}))
+		b = giode.Button(label, base.With(giode.Styles{Background: theme.Primary, Color: theme.OnPrimary}))
 	}
 	if icon != "" {
 		b.Icon(theme.Icon(icon, 15, ""))
