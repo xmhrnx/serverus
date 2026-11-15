@@ -26,6 +26,20 @@ func NewSidebar(e *env.Env, actions SidebarActions) *Sidebar {
 		)
 	}).Label("Settings").OnClick(func(giode.ClickEvent) { actions.Settings() })
 
+	s.overview = giode.Pressable(func(ps giode.PressState) giode.Element {
+		bg, fg, icon := giode.Color("transparent"), theme.Text, theme.Muted
+		switch {
+		case actions.OnOverview():
+			bg, icon = theme.SelectedFill, theme.Primary
+		case ps.Hovered:
+			bg = theme.HoverFill
+		}
+		return giode.Row(giode.Styles{Width: -1, Gap: 10, Align: giode.AlignCenter, Padding: giode.SymmetricInset(12, 9), BorderRadius: theme.RadiusMd, Background: bg},
+			theme.Icon("layout-dashboard", 16, icon),
+			giode.Text("Overview", giode.Styles{Color: fg, FontSize: theme.TextBase, FontWeight: giode.FontWeightMedium}),
+		)
+	}).Label("Overview of every server").OnClick(func(giode.ClickEvent) { actions.Overview() })
+
 	s.menu = giode.Menu(giode.Styles{Background: theme.Surface, Color: theme.Text, BorderRadius: theme.RadiusMd}).
 		IconItem(theme.IconSource("plug"), "Connect", func() { s.env.Sessions.Get(s.target).Connect() }).
 		IconItem(theme.IconSource("rotate-cw"), "Reconnect", func() { s.env.Sessions.Get(s.target).Reconnect() }).

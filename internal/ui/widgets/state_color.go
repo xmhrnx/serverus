@@ -1,4 +1,4 @@
-package shell
+package widgets
 
 import (
 	"github.com/xmhrnx/giode"
@@ -7,8 +7,8 @@ import (
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 )
 
-// stateColor is the color of a connection state.
-func stateColor(st session.State) giode.Color {
+// StateColor is the color of a connection state.
+func StateColor(st session.State) giode.Color {
 	switch st {
 	case session.Connected:
 		return theme.Success

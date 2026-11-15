@@ -11,6 +11,9 @@ func (r *Root) main() giode.Element {
 	if r.showSettings {
 		return r.settings
 	}
+	if r.showFleet && len(r.env.Repo.Servers()) > 0 {
+		return r.fleet
+	}
 	if s, ok := r.env.Repo.Server(r.selected); ok {
 		return r.view(s)
 	}

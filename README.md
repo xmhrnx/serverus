@@ -34,6 +34,22 @@ macOS and Linux, and builds for Android.
 - Live charts of the last few minutes, and the CPU of each connected server in the
   sidebar.
 
+**Dashboards**
+- **Overview of every server** (Ctrl/Cmd+0): a summary in numbers, a tile per server
+  with its status, CPU, memory and disk, what needs attention (failed connections,
+  busy CPUs, full memory and disks, hot sensors), CPU and memory history of every server
+  on one chart, and rankings by CPU, memory, disk space, temperature and traffic.
+  "Connect all" connects the servers that are down.
+- **Server overview**: system information, gauges, history charts (CPU and memory,
+  network, temperatures per sensor, load average against the cores, disk activity),
+  bars for cores, sensors, file systems and interfaces, a memory breakdown, and small
+  versions of the processes, services and containers pages, plus connection details
+  and the server's notes.
+- Both are made of cards: **Customize** shows each card's actions, to make it small,
+  half or full width, move it, or remove it, and **Add a card** picks from the cards not
+  shown. **Reset** brings back the defaults. Layouts are saved in the workspace; the
+  server overview's is shared by every server.
+
 **Terminal**
 - Tabs of xterm-256color shells with true color, bold/italic/underline, wide characters,
   the alternate screen (vim, htop), mouse-wheel scrollback, selection with copy,

@@ -33,6 +33,7 @@ func (s *Sidebar) Layout(gtx layout.Context) layout.Dimensions {
 			giode.Box(giode.Styles{FlexGrow: 1}, s.search),
 			s.add,
 		),
+		giode.Box(giode.Styles{Width: -1, Padding: giode.Inset{Left: theme.Space3, Right: theme.Space3, Bottom: theme.Space2}}, s.overview),
 		giode.Box(giode.Styles{FlexGrow: 1, Width: -1, Height: -1}, s.list),
 		giode.Divider(giode.Styles{Color: theme.SubtleBorder}),
 		giode.Box(giode.Styles{Width: -1, Padding: giode.UniformInset(theme.Space3)}, s.settings),

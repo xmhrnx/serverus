@@ -1,3 +1,5 @@
+// Package shell is the app's frame: the title bar, the sidebar listing
+// servers, and the workspace of the selected server with its pages.
 package shell
 
 import (
@@ -6,6 +8,7 @@ import (
 
 	"github.com/xmhrnx/serverus/internal/ui/dialogs"
 	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/pages/fleet"
 	"github.com/xmhrnx/serverus/internal/ui/pages/settings"
 	"github.com/xmhrnx/serverus/internal/ui/tray"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
@@ -23,12 +26,15 @@ type Root struct {
 
 	selected     string
 	showSettings bool
-	views        map[string]*ServerView
+	// showFleet shows the overview of every server.
+	showFleet bool
+	views     map[string]*ServerView
 
 	bar       *titlebar.TitleBar
 	sidebar   *Sidebar
 	welcome   *Welcome
 	settings  *settings.Page
+	fleet     *fleet.Page
 	editor    *dialogs.ServerDialog
 	confirm   *dialogs.Confirm
 	prompts   Prompts

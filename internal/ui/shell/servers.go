@@ -21,7 +21,7 @@ func (r *Root) view(s domain.Server) *ServerView {
 }
 
 func (r *Root) selectServer(s domain.Server) {
-	r.selected, r.showSettings, r.navOn = s.ID, false, false
+	r.selected, r.showSettings, r.showFleet, r.navOn = s.ID, false, false, false
 	r.view(s)
 	sess := r.env.Sessions.Get(s)
 	if st, _ := sess.State(); st == session.Disconnected {
@@ -37,4 +37,9 @@ func (r *Root) saved(s domain.Server) {
 		r.env.Info("Saved. Reconnect to use the new connection settings.")
 	}
 	r.selectServer(s)
+}
+
+// showOverview shows the dashboard of every server.
+func (r *Root) showOverview() {
+	r.showFleet, r.showSettings, r.navOn = true, false, false
 }

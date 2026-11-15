@@ -14,6 +14,7 @@ const (
 	Search      = "Mod+K"
 	AddServer   = "Mod+N"
 	Settings    = "Mod+,"
+	Overview    = "Mod+0"
 	NewTerminal = "Mod+Shift+T"
 	// Page is Mod plus the page's position in the tab row, 1 to 9.
 	Page = "Mod+"
@@ -21,6 +22,7 @@ const (
 
 // Help lists every shortcut.
 var Help = []Entry{
+	{Overview, "Open the overview of every server"},
 	{Search, "Search the servers"},
 	{AddServer, "Add a server"},
 	{Settings, "Open the settings"},

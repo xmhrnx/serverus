@@ -19,7 +19,11 @@ func (r *Root) wide() giode.Element {
 // compact is the phone and narrow-window layout: the server list
 // slides in from a button.
 func (r *Root) compact() giode.Element {
-	bar := []giode.Element{r.navBtn, giode.Box(giode.Styles{FlexGrow: 1}, giode.Text("Servers", theme.Heading))}
+	title := "Servers"
+	if r.showFleet && !r.showSettings {
+		title = "Overview"
+	}
+	bar := []giode.Element{r.navBtn, giode.Box(giode.Styles{FlexGrow: 1}, giode.Text(title, theme.Heading))}
 	if r.bar == nil {
 		// No title bar on phones: its actions move here.
 		bar = append(bar, r.transBtn, r.themeBtn)

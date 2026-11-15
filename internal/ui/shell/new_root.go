@@ -7,6 +7,7 @@ import (
 
 	"github.com/xmhrnx/serverus/internal/ui/dialogs"
 	"github.com/xmhrnx/serverus/internal/ui/env"
+	"github.com/xmhrnx/serverus/internal/ui/pages/fleet"
 	"github.com/xmhrnx/serverus/internal/ui/pages/settings"
 	"github.com/xmhrnx/serverus/internal/ui/theme"
 	"github.com/xmhrnx/serverus/internal/ui/widgets"
@@ -24,11 +25,14 @@ func NewRoot(e *env.Env, cfg Config) *Root {
 		Edit:       r.editor.Edit,
 		Duplicate:  r.editor.Duplicate,
 		Delete:     r.confirmDelete,
-		Settings:   func() { r.showSettings, r.navOn = true, false },
-		IsSelected: func(id string) bool { return !r.showSettings && r.selected == id },
+		Settings:   func() { r.showSettings, r.showFleet, r.navOn = true, false, false },
+		IsSelected: func(id string) bool { return !r.showSettings && !r.showFleet && r.selected == id },
+		Overview:   r.showOverview,
+		OnOverview: func() bool { return r.showFleet && !r.showSettings },
 	})
 	r.welcome = NewWelcome(r.editor.Add)
 	r.settings = settings.New(e, cfg.DataDir, r.applySettings)
+	r.fleet = fleet.New(e, r.selectServer)
 	r.transfers = NewTransfersPanel(e)
 	r.drawer = giode.Drawer(&r.drawerOn, giode.SideRight, 380, func() giode.Element { return r.transfers },
 		giode.Styles{Background: theme.Surface})
@@ -41,6 +45,7 @@ func NewRoot(e *env.Env, cfg Config) *Root {
 	}
 	if servers := e.Repo.Servers(); len(servers) > 0 {
 		r.selectServer(servers[0])
+		r.showFleet = len(servers) > 1 // one server opens straight to it
 	}
 	return r
 }

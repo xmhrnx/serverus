@@ -29,7 +29,7 @@ func serverItem(s domain.Server, sess *session.Session, selected bool, ps giode.
 			Color: theme.Muted, FontSize: theme.TextXS, FontFamily: theme.Mono,
 		}))
 	}
-	trailing = append(trailing, widgets.StatusDot(stateColor(st), 10))
+	trailing = append(trailing, widgets.StatusDot(widgets.StateColor(st), 10))
 
 	nameColor := theme.Text
 	if !selected && st != session.Connected {
@@ -39,7 +39,7 @@ func serverItem(s domain.Server, sess *session.Session, selected bool, ps giode.
 		Width: -1, Gap: 10, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap,
 		Padding: giode.SymmetricInset(10, 8), BorderRadius: theme.RadiusMd, Background: bg,
 	},
-		ServerAvatar(s, 32),
+		widgets.ServerAvatar(s, 32),
 		giode.Stack(giode.Styles{Gap: 2, FlexGrow: 1},
 			giode.Text(s.Name, giode.Styles{Color: nameColor, FontSize: theme.TextBase, FontWeight: giode.FontWeightMedium, TextOverflow: giode.TextOverflowEllipsis}),
 			giode.Text(s.Subtitle(), giode.Styles{Color: theme.Faint, FontSize: theme.TextXS, TextOverflow: giode.TextOverflowEllipsis}),

@@ -18,9 +18,10 @@ func (r *Root) registerShortcuts() {
 			r.sidebar.FocusSearch()
 		}),
 		giode.Shortcut(shortcuts.AddServer, r.editor.Add),
-		giode.Shortcut(shortcuts.Settings, func() { r.showSettings = true }),
+		giode.Shortcut(shortcuts.Settings, func() { r.showSettings, r.showFleet = true, false }),
+		giode.Shortcut(shortcuts.Overview, r.showOverview),
 	}
-	if v, ok := r.views[r.selected]; ok && !r.showSettings {
+	if v, ok := r.views[r.selected]; ok && !r.showSettings && !r.showFleet {
 		list = append(list, giode.Shortcut(shortcuts.NewTerminal, v.NewTerminalTab))
 		for n := 1; n <= 9; n++ {
 			n := n

@@ -10,11 +10,23 @@ type Series struct {
 // History keeps the recent values the dashboard charts.
 type History struct {
 	CPU, Memory, NetRx, NetTx, DiskRead, DiskWrite, Temperature *Series
+	Load, Swap, IOWait                                          *Series
+	// Sensors is each temperature sensor's history, by name, for the
+	// first maxSensorSeries sensors seen.
+	Sensors map[string]*Series
 }
+
+// maxSensorSeries bounds the per-sensor history on machines with
+// dozens of probes.
+const maxSensorSeries = 16
 
 // Charts is a copy of the history's values, safe to read anywhere.
 type Charts struct {
 	CPU, Memory, NetRx, NetTx, DiskRead, DiskWrite, Temperature []float64
+	// Load is the 1-minute load average; Swap and IOWait are percents.
+	Load, Swap, IOWait []float64
+	// Sensors is each sensor's temperature history, by name.
+	Sensors map[string][]float64
 }
 
 // NewSeries returns an empty series holding up to n values.

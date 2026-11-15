@@ -32,6 +32,9 @@ type Settings struct {
 	// CloseToTray keeps the app running in the tray when the window is
 	// closed, so connections, tunnels and transfers carry on.
 	CloseToTray bool `json:"closeToTray"`
+	// Dashboards are the cards the user placed on each dashboard, in
+	// order, by dashboard name; a missing one shows its defaults.
+	Dashboards map[string][]DashboardCard `json:"dashboards,omitempty"`
 	// MaxTransfers is how many uploads and downloads run at once.
 	MaxTransfers int `json:"maxTransfers"`
 }

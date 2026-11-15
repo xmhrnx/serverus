@@ -1,6 +1,4 @@
-// Package shell is the app's frame: the title bar, the sidebar listing
-// servers, and the workspace of the selected server with its pages.
-package shell
+package widgets
 
 import (
 	"strings"
@@ -24,7 +22,7 @@ func ServerAvatar(s domain.Server, size int) giode.Element {
 	if s.Protocol == domain.ProtocolLocal {
 		inner = theme.Icon("monitor", size/2, "#ffffff")
 	} else {
-		inner = giode.Text(initials(s.Name), giode.Styles{Color: "#ffffff", FontSize: properties.FontSize(float32(size) * 0.38), FontWeight: giode.FontWeightBold})
+		inner = giode.Text(serverInitials(s.Name), giode.Styles{Color: "#ffffff", FontSize: properties.FontSize(float32(size) * 0.38), FontWeight: giode.FontWeightBold})
 	}
 	return giode.Box(giode.Styles{
 		Width: properties.Width(size), Height: properties.Height(size),
@@ -34,8 +32,8 @@ func ServerAvatar(s domain.Server, size int) giode.Element {
 	}, inner)
 }
 
-// initials picks up to two letters from a name: "Prod Web" is "PW".
-func initials(name string) string {
+// serverInitials picks up to two letters from a name: "Prod Web" is "PW".
+func serverInitials(name string) string {
 	var out []rune
 	for _, w := range strings.FieldsFunc(name, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
 		out = append(out, unicode.ToUpper([]rune(w)[0]))

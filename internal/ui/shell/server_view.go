@@ -15,6 +15,7 @@ import (
 type ServerView struct {
 	env    *env.Env
 	sess   *session.Session
+	onEdit func()
 	active PageKind
 
 	topbar *TopBar
@@ -30,7 +31,7 @@ type ServerView struct {
 // NewServerView returns the workspace for sess; onEdit opens the
 // server editor.
 func NewServerView(e *env.Env, sess *session.Session, onEdit func()) *ServerView {
-	v := &ServerView{env: e, sess: sess, pages: map[PageKind]giode.Element{}}
+	v := &ServerView{env: e, sess: sess, onEdit: onEdit, pages: map[PageKind]giode.Element{}}
 	v.power = NewPowerControl(e, sess)
 	v.topbar = NewTopBar(sess, v.power, onEdit)
 	v.nav = NewNavTabs(func() PageKind { return v.active }, v.Show)

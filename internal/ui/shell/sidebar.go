@@ -19,6 +19,10 @@ type SidebarActions struct {
 	Delete     func(domain.Server)
 	Settings   func()
 	IsSelected func(id string) bool
+	// Overview shows every server's dashboard; OnOverview reports
+	// whether it's showing.
+	Overview   func()
+	OnOverview func() bool
 }
 
 // Sidebar lists the servers, grouped and searchable.
@@ -29,6 +33,7 @@ type Sidebar struct {
 	search   *widgets.SearchField
 	add      *widgets.ToolButton
 	settings *giode.PressableElement
+	overview *giode.PressableElement
 	list     *scroll.Scroll
 	items    *giode.KeyedCache[string, *giode.PressableElement]
 	menu     *menu.Menu

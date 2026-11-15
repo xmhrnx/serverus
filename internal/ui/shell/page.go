@@ -22,7 +22,7 @@ func (v *ServerView) page(k PageKind) giode.Element {
 	var p giode.Element
 	switch k {
 	case PageOverview:
-		p = overview.New(v.env, v.sess)
+		p = overview.New(v.env, v.sess, overview.Links{Open: v.openNamed, Edit: v.onEdit})
 	case PageTerminal:
 		v.terminal = terminal.New(v.env, v.sess)
 		p = v.terminal
@@ -44,4 +44,12 @@ func (v *ServerView) page(k PageKind) giode.Element {
 	}
 	v.pages[k] = p
 	return p
+}
+
+// openNamed shows the page a dashboard card links to.
+func (v *ServerView) openNamed(name string) {
+	k, ok := map[string]PageKind{"processes": PageProcesses, "services": PageServices, "docker": PageDocker}[name]
+	if ok {
+		v.Show(k)
+	}
 }

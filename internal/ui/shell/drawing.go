@@ -17,7 +17,7 @@ import (
 func (t *TopBar) Layout(gtx layout.Context) layout.Dimensions {
 	s := t.sess.Server()
 	st, _ := t.sess.State()
-	status := widgets.Pill(st.Label(), stateColor(st))
+	status := widgets.Pill(st.Label(), widgets.StateColor(st))
 	meta := []giode.Element{
 		giode.Text(s.Subtitle(), theme.Caption),
 	}
@@ -51,7 +51,7 @@ func (t *TopBar) Layout(gtx layout.Context) layout.Dimensions {
 		Width: -1, Gap: theme.Space4, Align: giode.AlignCenter, Wrap: giode.WrapNoWrap,
 		Padding: giode.Inset{Left: theme.Space6, Right: theme.Space5, Top: theme.Space5, Bottom: theme.Space3},
 	},
-		ServerAvatar(s, 44),
+		widgets.ServerAvatar(s, 44),
 		giode.Stack(giode.Styles{Gap: 5, FlexGrow: 1},
 			giode.Row(giode.Styles{Gap: theme.Space3, Align: giode.AlignCenter},
 				giode.Text(s.Name, theme.Title.With(giode.Styles{MaxLines: 1, TextOverflow: giode.TextOverflowEllipsis})),
