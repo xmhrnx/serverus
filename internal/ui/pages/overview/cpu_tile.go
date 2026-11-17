@@ -14,7 +14,7 @@ import (
 // cpuTile is the CPU headline: total use and I/O wait.
 func cpuTile(s monitor.Snapshot) giode.Element {
 	return kpiTile("cpu", "CPU", format.Percent(s.CPUPercent),
-		fmt.Sprintf("%d cores", len(s.CorePercents)),
+		plural(len(s.CorePercents), "core", "cores"),
 		fmt.Sprintf("I/O wait %s", format.Percent(s.IOWait)),
 		widgets.Ring(s.CPUPercent, 64, 7, theme.Primary))
 }

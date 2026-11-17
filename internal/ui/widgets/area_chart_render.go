@@ -9,7 +9,9 @@ import (
 
 // AreaChart draws series over capacity samples, newest on the right,
 // scaled to ceiling (or to the largest value when ceiling is 0), with
-// faint horizontal grid lines.
+// faint horizontal grid lines. It is at least height dp tall and grows
+// into whatever room its card has left (a card stretched to match a
+// taller neighbor).
 func AreaChart(height, capacity int, ceiling float64, series ...ChartSeries) giode.Element {
 	top := ceiling
 	if top <= 0 {
@@ -23,7 +25,7 @@ func AreaChart(height, capacity int, ceiling float64, series ...ChartSeries) gio
 			top = 1
 		}
 	}
-	return giode.Canvas(giode.Styles{Width: -1, Height: properties.Height(height)}, func(p *giode.Painter) {
+	return giode.Canvas(giode.Styles{Width: -1, FlexGrow: 1, MinHeight: properties.MinHeight(height)}, func(p *giode.Painter) {
 		w, h := p.Width(), p.Height()
 		for i := 1; i < 4; i++ {
 			y := h * float32(i) / 4
