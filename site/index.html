@@ -212,6 +212,16 @@
     font: 13.5px/1.7 var(--mono); overflow-x: auto; border: 1px solid var(--border);
   }
 
+  /* Privacy policy */
+  .policy { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .policy .meter p, .policy .meter li { color: var(--secondary); font-size: 15px; }
+  .policy .meter p { margin: 0 0 10px; }
+  .policy .meter p:last-child { margin-bottom: 0; }
+  .policy ul { margin: 0; padding-left: 18px; }
+  .policy li { margin: 4px 0; }
+  .policy .wide { grid-column: 1 / -1; }
+  .updated { font: 13px var(--mono); color: var(--muted); margin-top: 22px; }
+
   footer { border-top: 1px solid var(--border); padding: 32px 0 44px; color: var(--muted); font-size: 14px; }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
   footer .brand { color: var(--text); }
@@ -221,7 +231,7 @@
     .hero .wrap, .split { grid-template-columns: 1fr; }
     .portrait { width: min(320px, 80%); order: -1; }
     .protocols, .os { grid-template-columns: repeat(2, 1fr); }
-    .meters { grid-template-columns: 1fr; }
+    .meters, .policy { grid-template-columns: 1fr; }
   }
   @media (max-width: 640px) {
     .rack { grid-template-columns: 1fr; }
@@ -432,6 +442,54 @@ giode run</pre>
       </div>
     </div>
   </section>
+  <section id="privacy" class="band">
+    <div class="wrap">
+      <p class="kicker">Privacy policy</p>
+      <h2>Your servers, your device.</h2>
+      <p class="sub">Serverus has no account, no analytics, no ads and no tracking. It connects only to the servers you add, and everything it keeps stays on your device. This policy covers Serverus on every platform and from every store.</p>
+      <div class="policy">
+        <div class="meter">
+          <h3>What we collect</h3>
+          <p>Nothing. Serverus never sends anything to its developer or to any third party: there is no telemetry, crash reporting, update check or advertising code in the app.</p>
+        </div>
+        <div class="meter">
+          <h3>Where it connects</h3>
+          <p>Only where you point it: the SSH, Telnet and FTP servers you add, the jump hosts you set, and the tunnels you open. Wake-on-LAN sends a wake-up packet on your local network. What you type and transfer goes straight between your device and your servers.</p>
+        </div>
+        <div class="meter">
+          <h3>What stays on your device</h3>
+          <ul>
+            <li>Your workspace: servers (name, address, port, user name, key file location, group, tags, notes, color, MAC address), snippets, tunnels, settings and dashboard layouts, in the app's data folder.</li>
+            <li>Host keys you trust, in Serverus's own <code>known_hosts</code> file. It also reads your <code>~/.ssh/known_hosts</code> where it can.</li>
+            <li>A copy of a private key file you pick, only on Android and in the Mac App Store version, which can't reopen your own file later. It stays in the app's private data folder.</li>
+            <li>Monitoring history, kept in memory for a few minutes and never written to disk.</li>
+          </ul>
+        </div>
+        <div class="meter">
+          <h3>Passwords and keys</h3>
+          <p>Passwords and key passphrases you save go into the system's secure storage (Keychain on macOS, Credential Manager on Windows, Secret Service on Linux, Android Keystore), never into the workspace file.</p>
+          <p>A sudo password is kept in memory only, until you disconnect. Private keys are read from the file you choose and never leave your device; an SSH agent signs for you without handing its keys to Serverus.</p>
+        </div>
+        <div class="meter">
+          <h3>Permissions</h3>
+          <ul>
+            <li><b>Network</b>, to reach your servers.</li>
+            <li><b>Notifications</b>, to tell you when a server disconnects (you can turn this off in Settings).</li>
+            <li><b>Files you choose</b>, for uploads, downloads and key files.</li>
+          </ul>
+        </div>
+        <div class="meter">
+          <h3>Deleting your data</h3>
+          <p>Delete a server and its saved password and passphrase go with it. Uninstalling the app, or deleting its data folder, removes the rest. Nothing is kept anywhere else, so there is nothing for us to delete.</p>
+        </div>
+        <div class="meter wide">
+          <h3>Children, changes and contact</h3>
+          <p>Serverus is a tool for administering computers and isn't directed at children. If this policy changes, the new version is published on this page with a new date. Questions go to <a href="https://github.com/xmhrnx/serverus/issues">the project's issue tracker</a>.</p>
+        </div>
+      </div>
+      <p class="updated">Last updated 19 November 2026</p>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -442,6 +500,7 @@ giode run</pre>
       <a href="https://github.com/xmhrnx/serverus">Source</a>
       <a href="https://github.com/xmhrnx/serverus/releases">Releases</a>
       <a href="https://github.com/xmhrnx/serverus/issues">Issues</a>
+      <a href="#privacy">Privacy</a>
     </div>
   </div>
 </footer>
