@@ -16,20 +16,42 @@ website = "https://xmhrnx.github.io/serverus/"
 
 [android]
 min_sdk = 21
+target_sdk = 36               # Google Play requires Android 16 (API 36) for new apps and updates since 31 Aug 2026
 # Adaptive icon layers, drawn by scripts/make_icon.py. Without them the
 # launcher shows white where app.icon's rounded corners are transparent.
 icon_foreground = "assets/android-foreground.png"
 icon_background = "assets/android-background.png"
 icon_monochrome = "assets/android-monochrome.png"   # themed icons (Android 13+)
-permissions = ["network"]
-# keep_alive = true          # lets App.KeepAlive keep work running in the background
-# keystore = "release.keystore"   # created by giode keystore; signs giode build -release
+permissions = ["network"]  # SSH, Telnet, FTP, tunnels and Wake-on-LAN
+notifications = true         # "Notify me when a server disconnects" (App.Notify)
+# The upload key, made by giode keystore and kept out of git (*.keystore).
+# The release workflow writes it from ANDROID_KEYSTORE_BASE64 and signs
+# with the password in GIODE_KEYSTORE_PASS; see RELEASING.md.
+keystore = "release.keystore"
 
 [macos]
 min_os = 11
-# identity = "Developer ID Application: Your Name (TEAMID)"  # signs giode build -release
-# notary_id = "you@example.com"     # notarizes, with the password in $GIODE_NOTARY_PASS
-# notary_team_id = "TEAMID"
+# Developer ID signing and notarization for the .dmg on GitHub come from
+# the MACOS_CERT_* and GIODE_NOTARY_* repository secrets; see RELEASING.md.
+
+[macos.plist]
+LSApplicationCategoryType = "public.app-category.developer-tools"   # the Mac App Store requires it
+# Serverus uses only standard cryptography (SSH, TLS for FTPS, the
+# system keychain), which is exempt; this spares the export compliance
+# question on every App Store upload.
+ITSAppUsesNonExemptEncryption = false
+
+# The Mac App Store build (giode build mas). The release workflow writes
+# the profile from the MACOS_PROFILE_BASE64 secret and points
+# $GIODE_MACOS_STORE_PROFILE at it; keep the file out of git.
+# In the sandbox, "This computer" (the local terminal, processes and
+# files) only reaches the app's container; see RELEASING.md.
+[macos.store]
+entitlements = [
+  "network.client",                 # SSH, Telnet, FTP, jump hosts, Wake-on-LAN
+  "network.server",                 # tunnels listen on a local port; the single-instance lock
+  "files.user-selected.read-write", # uploads, download folders, key files the user picks
+]
 
 [windows]
 arch = "amd64"
@@ -40,11 +62,14 @@ arch = "amd64"
 # desktop_shortcut = true
 # license = "assets/license.txt"
 
+# The Microsoft Store package (giode build msix), with the values from
+# Partner Center's Product identity page. The Store signs the package.
 [windows.msix]
-# The signing certificate's subject. A Windows code-signing certificate
-# (giode cert, or a bought one) must have exactly this subject, or the
-# Partner Center publisher ID when the package goes to the Store.
-publisher = "CN=xmhrnx"
+# Must match Partner Center → Serverus → Product identity →
+# Package/Identity/Name once the name "Serverus" is reserved.
+identity_name = "MehranZahir.Serverus"
+publisher = "CN=B40E8F57-A7E0-40BB-8E74-5D051D0B578B"
+publisher_display_name = "Mehran Zahiroddini"
 # Lets the MSIX package start at login (Settings > Start at login).
 startup_task = true
 
@@ -52,10 +77,20 @@ startup_task = true
 # certificate = "codesign.pfx"   # created by giode cert (testing) or bought; password in $GIODE_WINDOWS_CERT_PASS
 # timestamp = "http://timestamp.digicert.com"
 
+# The privacy manifest (PrivacyInfo.xcprivacy) the Mac App Store asks
+# for. Serverus collects nothing for its developer: it talks only to the
+# servers the user adds, and keeps everything on the device.
+[privacy]
+tracking = false
+
 [linux]
 categories = ["Network", "System", "Utility"]     # freedesktop menu categories
 license = "Apache-2.0"       # SPDX, for .deb, .rpm and AppStream
 
+# GitHub Actions: giode ci writes .github/workflows/release.yml from this.
+# After `giode ci -f`, redo two edits by hand: pin the CLI
+# (go install github.com/xmhrnx/giode-cli/cmd/giode@v0.1.35-alpha.1, not
+# @latest) and use `go-version-file: go.mod` instead of `go-version: stable`.
 [ci]
 trigger = "release"   # build when a GitHub release is published
 build = "tag"         # the tag is major.minor.patch.versionCode (1.0.0.1); its last part is the build number
