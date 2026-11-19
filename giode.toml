@@ -12,7 +12,7 @@ package = "."
 platforms = ["windows", "macos", "linux", "android"]   # what giode build builds with no target named
 publisher = "xmhrnx"
 description = "Manage, monitor and connect to all your servers over SSH, Telnet, FTP or locally."
-website = ""
+website = "https://xmhrnx.github.io/serverus/"
 
 [android]
 min_sdk = 21

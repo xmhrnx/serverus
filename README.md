@@ -5,6 +5,9 @@ A cross-platform app for managing remote servers, built with
 [CLI](https://github.com/xmhrnx/giode-cli). It runs natively (no webview) on Windows,
 macOS and Linux, and builds for Android.
 
+Website: <https://xmhrnx.github.io/serverus/> (`site/`, published by the manual
+`.github/workflows/site.yml`).
+
 ## Features
 
 **Servers**

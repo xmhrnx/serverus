@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serverus — every server, one quiet window</title>
+<meta name="description" content="Serverus is a native app for Windows, macOS, Linux and Android to connect to, monitor and manage your servers over SSH, Telnet, FTP or locally.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#08110d">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* The app's Emerald tone and Emerald highlight. */
+    --bg: #08110d;
+    --bg-2: #0c1713;
+    --surface: #10201a;
+    --border: #1d3028;
+    --text: #e5eee9;
+    --muted: #83998e;
+    --secondary: #97ada2;
+    --accent: #10b981;
+    --led: #24d680;
+    --silver: #dce5e1;
+    --silver-2: #a2b2ac;
+    --slot: #121a17;
+    --hair: #0d0d11;
+    --tile-top: #163a2c;
+    --shadow: 0 24px 60px -24px #000c;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f0f6f3;
+      --bg-2: #e6efea;
+      --surface: #ffffff;
+      --border: #d9e6df;
+      --text: #0f1a15;
+      --muted: #5f756a;
+      --secondary: #4f665b;
+      --accent: #059669;
+      --led: #16a34a;
+      --silver: #ffffff;
+      --silver-2: #e3ece7;
+      --slot: #1d3028;
+      --shadow: 0 24px 50px -28px #0f1a1555;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  a { color: inherit; }
+  code, kbd { font-family: var(--mono); font-size: .88em; }
+  kbd {
+    padding: .05em .4em; border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 5px; background: var(--bg-2);
+  }
+  .wrap { width: min(1120px, 100% - 32px); margin-inline: auto; }
+
+  /* Top bar */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  }
+  .bar .wrap { display: flex; align-items: center; gap: 16px; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; letter-spacing: -.01em; }
+  .brand img { width: 30px; height: 30px; }
+  .bar nav { margin-left: auto; display: flex; gap: 22px; font-size: 14px; }
+  .bar nav a { text-decoration: none; color: var(--muted); }
+  .bar nav a:hover { color: var(--text); }
+  @media (max-width: 640px) { .bar nav a.opt { display: none; } }
+
+  /* Hero, opened like the icon's curtains */
+  .hero { position: relative; padding: 72px 0 96px; overflow: hidden; isolation: isolate; }
+  .hero::before {
+    content: ""; position: absolute; inset: -20% -10% auto; height: 120%; z-index: -2;
+    background: radial-gradient(50% 45% at 50% 30%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+  }
+  .curtain {
+    position: absolute; top: 0; bottom: 0; width: 52%; z-index: -1;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 22px, #ffffff07 22px 24px),
+      linear-gradient(180deg, #16161c, var(--hair) 60%);
+    animation: part 1.6s cubic-bezier(.7, 0, .2, 1) .15s both;
+  }
+  .curtain.l { left: 0; border-bottom-right-radius: 40% 12%; transform-origin: left; --to: -95%; }
+  .curtain.r { right: 0; border-bottom-left-radius: 40% 12%; transform-origin: right; --to: 95%; }
+  @keyframes part { from { transform: translateX(0); } to { transform: translateX(var(--to)); } }
+  @media (prefers-color-scheme: light) {
+    .curtain { opacity: .92; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .curtain { animation-duration: 1ms; }
+    html { scroll-behavior: auto; }
+  }
+  .hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+    padding: 7px 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 99px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--led); box-shadow: 0 0 10px var(--led); }
+  h1 { font-size: clamp(44px, 7.4vw, 84px); line-height: .98; letter-spacing: -.045em; margin: 22px 0 18px; font-weight: 800; }
+  h1 span { color: var(--accent); }
+  .lede { font-size: clamp(17px, 2vw, 20px); color: var(--secondary); max-width: 34em; margin: 0 0 30px; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 13px 20px; border-radius: 12px;
+    font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--bg-2);
+    transition: transform .15s, border-color .15s;
+  }
+  .btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #04150e; }
+  .btn svg { width: 18px; height: 18px; }
+  .platforms { margin-top: 22px; font: 13px var(--mono); color: var(--muted); }
+
+  .portrait { position: relative; justify-self: center; width: min(420px, 100%); }
+  .portrait img { width: 100%; height: auto; display: block; filter: drop-shadow(0 30px 50px #000a); animation: rise 1.2s ease-out .4s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+
+  /* Sections */
+  section { padding: 84px 0; }
+  .kicker { font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h2 { font-size: clamp(30px, 4.4vw, 46px); line-height: 1.06; letter-spacing: -.035em; margin: 0 0 16px; }
+  .sub { color: var(--secondary); max-width: 40em; margin: 0 0 40px; font-size: 18px; }
+
+  /* Feature cards are rack units: a silver faceplate, an LED and a slot. */
+  .rack { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .unit {
+    position: relative; padding: 22px 24px 22px 66px; border-radius: 16px;
+    background: linear-gradient(180deg, var(--surface), var(--bg-2));
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+  }
+  .unit::before {
+    content: ""; position: absolute; left: 26px; top: 29px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--led); box-shadow: 0 0 0 4px color-mix(in srgb, var(--led) 18%, transparent), 0 0 14px var(--led);
+  }
+  .unit h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: -.01em; }
+  .unit p { margin: 0; color: var(--secondary); font-size: 15px; }
+  .unit ul { margin: 10px 0 0; padding-left: 18px; color: var(--secondary); font-size: 15px; }
+  .unit li { margin: 3px 0; }
+  .unit.wide { grid-column: 1 / -1; }
+
+  /* Protocol plates */
+  .protocols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .plate {
+    border-radius: 12px; padding: 16px 18px; color: #0f1a15;
+    background: linear-gradient(180deg, var(--silver), var(--silver-2));
+    border: 1px solid #0002; position: relative; overflow: hidden;
+  }
+  .plate::after { content: ""; position: absolute; right: 16px; top: 22px; width: 38%; height: 8px; border-radius: 6px; background: var(--slot); }
+  .plate b { display: block; font-size: 17px; font-family: var(--mono); }
+  .plate small { color: #4f665b; font-size: 13px; display: block; max-width: 70%; margin-top: 4px; }
+
+  /* Monitoring band */
+  .band { background: var(--bg-2); border-block: 1px solid var(--border); }
+  .meters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .meter { padding: 22px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+  .meter h3 { margin: 0 0 6px; font-size: 17px; }
+  .meter p { margin: 0 0 16px; color: var(--secondary); font-size: 15px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 54px; }
+  .bars i { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent)); animation: pulse 3.2s ease-in-out infinite; transform-origin: bottom; }
+  .bars i:nth-child(odd) { animation-delay: -1.2s; }
+  .bars i:nth-child(3n) { animation-delay: -2.1s; }
+  @keyframes pulse { 0%, 100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+  @media (prefers-reduced-motion: reduce) { .bars i { animation: none; } }
+  .note { font-size: 13px; color: var(--muted); margin-top: 18px; }
+
+  /* Terminal */
+  .term {
+    border-radius: 16px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow);
+    background: #09130f; color: #d5e4dc; font: 14px/1.7 var(--mono);
+  }
+  .term .tabs { display: flex; gap: 2px; padding: 10px 12px 0; background: #0c1713; border-bottom: 1px solid #1d3028; overflow: hidden; }
+  .term .tabs span { padding: 7px 14px; border-radius: 8px 8px 0 0; color: #83998e; white-space: nowrap; font-size: 13px; }
+  .term .tabs span.on { background: #09130f; color: #e5eee9; }
+  .term pre { margin: 0; padding: 20px 22px; white-space: pre-wrap; word-break: break-word; }
+  .term .p { color: #24d680; }
+  .term .c { color: #83998e; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  .keys { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .keys li { color: var(--secondary); }
+
+  /* Download */
+  .download { text-align: center; }
+  .download .sub { margin-inline: auto; }
+  .os { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 0 auto 32px; max-width: 880px; }
+  .os a {
+    display: block; text-decoration: none; padding: 22px 16px; border-radius: 16px; border: 1px solid var(--border);
+    background: var(--bg-2); transition: border-color .15s, transform .15s;
+  }
+  .os a:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .os b { display: block; font-size: 18px; margin-bottom: 4px; }
+  .os small { color: var(--muted); font: 12px var(--mono); }
+  .build { max-width: 640px; margin: 36px auto 0; text-align: left; }
+  .build pre {
+    margin: 10px 0 0; padding: 16px 18px; border-radius: 12px; background: #09130f; color: #d5e4dc;
+    font: 13.5px/1.7 var(--mono); overflow-x: auto; border: 1px solid var(--border);
+  }
+
+  footer { border-top: 1px solid var(--border); padding: 32px 0 44px; color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+  footer .brand { color: var(--text); }
+  footer .links { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .hero .wrap, .split { grid-template-columns: 1fr; }
+    .portrait { width: min(320px, 80%); order: -1; }
+    .protocols, .os { grid-template-columns: repeat(2, 1fr); }
+    .meters { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .rack { grid-template-columns: 1fr; }
+    .hero { padding: 40px 0 64px; }
+    section { padding: 64px 0; }
+    .unit { padding: 20px 18px 20px 52px; }
+    .unit::before { left: 20px; top: 27px; }
+  }
+  @media (max-width: 420px) {
+    .protocols, .os { grid-template-columns: 1fr; }
+    .btn { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="" width="30" height="30">Serverus</a>
+    <nav>
+      <a class="opt" href="#features">Features</a>
+      <a class="opt" href="#monitoring">Monitoring</a>
+      <a href="#download">Download</a>
+      <a href="https://github.com/xmhrnx/serverus">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="curtain l" aria-hidden="true"></div>
+    <div class="curtain r" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><span class="dot"></span>Native · no webview · open source</span>
+        <h1>All your servers.<br><span>One window.</span></h1>
+        <p class="lede">Serverus connects to your machines over SSH, Telnet, FTP or right here on this computer, then
+          watches them, opens terminals, moves files and runs the chores: processes, services, Docker,
+          power and drives.</p>
+        <div class="ctas">
+          <a class="btn primary" href="https://github.com/xmhrnx/serverus/releases/latest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Download the latest release</a>
+          <a class="btn" href="https://github.com/xmhrnx/serverus">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>
+            Source code</a>
+        </div>
+        <p class="platforms">Windows · macOS · Linux · Android</p>
+      </div>
+      <div class="portrait">
+        <img src="img/icon.png" alt="The Serverus icon: a server rack with long black curtain hair" width="1024" height="1024">
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <p class="kicker">Connect</p>
+      <h2>Four ways in, one sidebar.</h2>
+      <p class="sub">Any number of servers in a searchable sidebar, grouped, tagged and colored, with live connection
+        status. Right-click one to connect, reconnect, wake, edit or duplicate it, and test a connection
+        before you save it.</p>
+      <div class="protocols">
+        <div class="plate"><b>SSH</b><small>password, key, agent, one-time codes, jump hosts</small></div>
+        <div class="plate"><b>Local</b><small>this computer, on any OS</small></div>
+        <div class="plate"><b>Telnet</b><small>switches, routers, boards</small></div>
+        <div class="plate"><b>FTP/S</b><small>files, with explicit TLS</small></div>
+      </div>
+      <div class="rack">
+        <div class="unit">
+          <h3>Secrets stay in the keychain</h3>
+          <p>Passwords and passphrases go to the OS keychain (Keychain, Credential Manager, Secret Service), never into
+            the workspace file. Host keys are checked against <code>known_hosts</code>, new ones confirmed by fingerprint,
+            and changed ones flagged.</p>
+        </div>
+        <div class="unit">
+          <h3>SSH agents you already use</h3>
+          <p>ssh-agent, the Windows OpenSSH agent, 1Password and Secretive. Chain jump hosts like
+            <code>ssh -J</code>, and get notified when a server drops.</p>
+        </div>
+        <div class="unit">
+          <h3>Files over SFTP, FTP or locally</h3>
+          <p>Breadcrumbs, filters and sorting. Drop files and folders on the window to upload; transfers run in the
+            background with progress, speed and cancel. Edit text files in place, and when root owns a file, Serverus
+            offers to do it through sudo.</p>
+        </div>
+        <div class="unit">
+          <h3>Administration without the incantations</h3>
+          <ul>
+            <li><b>Processes</b>: sort, filter, terminate, kill or SIGHUP.</li>
+            <li><b>Services</b> (systemd): start, stop, enable at boot, read the journal.</li>
+            <li><b>Docker</b>: containers with live CPU and memory, logs, start and stop.</li>
+            <li><b>Power</b>: restart, shut down or schedule it; wake again with Wake-on-LAN.</li>
+            <li><b>Drives</b>: mount, unmount and eject USB drives.</li>
+          </ul>
+        </div>
+        <div class="unit">
+          <h3>Tunnels</h3>
+          <p>Local port forwarding through any SSH server (<code>ssh -L</code>), opened by hand or on connect,
+            with live connection counts.</p>
+        </div>
+        <div class="unit">
+          <h3>Snippets</h3>
+          <p>Saved commands: run on the current server, type into its terminal, or run on several servers at
+            once and compare the results side by side.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="monitoring" class="band">
+    <div class="wrap">
+      <p class="kicker">Monitoring</p>
+      <h2>Nothing to install on the server.</h2>
+      <p class="sub">Linux servers are watched over SSH as they are, and this computer on any OS. Live charts cover the last few
+        minutes, and each connected server's CPU shows in the sidebar.</p>
+      <div class="meters">
+        <div class="meter">
+          <h3>CPU, memory, load</h3>
+          <p>Total, I/O wait and per core; memory and swap, load, uptime and process count.</p>
+          <div class="bars" aria-hidden="true"><i style="height:60%"></i><i style="height:85%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:95%"></i><i style="height:55%"></i><i style="height:75%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:65%"></i></div>
+        </div>
+        <div class="meter">
+          <h3>Disks and network</h3>
+          <p>Every mounted file system, disk read and write, throughput per interface and in total.</p>
+          <div class="bars" aria-hidden="true"><i style="height:35%"></i><i style="height:50%"></i><i style="height:90%"></i><i style="height:60%"></i><i style="height:30%"></i><i style="height:70%"></i><i style="height:85%"></i><i style="height:40%"></i><i style="height:55%"></i><i style="height:75%"></i></div>
+        </div>
+        <div class="meter">
+          <h3>Temperatures</h3>
+          <p>From hwmon and thermal zones, colored by each sensor's high and critical thresholds.</p>
+          <div class="bars" aria-hidden="true"><i style="height:50%"></i><i style="height:55%"></i><i style="height:58%"></i><i style="height:62%"></i><i style="height:60%"></i><i style="height:66%"></i><i style="height:70%"></i><i style="height:64%"></i><i style="height:61%"></i><i style="height:57%"></i></div>
+        </div>
+      </div>
+      <div class="rack" style="margin-top:18px">
+        <div class="unit wide">
+          <h3>Dashboards made of cards</h3>
+          <p>An overview of every server (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>0</kbd>) with a tile per server, what needs
+            attention, shared CPU and memory history and rankings; and a per-server overview with gauges, history charts
+            and small versions of the processes, services and containers pages. Make cards small, half or full width,
+            move them, add or remove them; layouts are saved in the workspace.</p>
+        </div>
+      </div>
+      <p class="note">The bars above are decoration, not data.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <p class="kicker">Terminal</p>
+        <h2>A real terminal, in tabs.</h2>
+        <ul class="keys">
+          <li>xterm-256color with true color, wide characters and the alternate screen, so vim and htop look right.</li>
+          <li>Selection, copy and bracketed paste: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> / <kbd>V</kbd>, or
+            <kbd>⌘</kbd>+<kbd>C</kbd> / <kbd>V</kbd> on macOS.</li>
+          <li>Scrollback with the mouse wheel or <kbd>Shift</kbd>+<kbd>PageUp</kbd>.</li>
+          <li>Insert saved snippets from the toolbar.</li>
+        </ul>
+      </div>
+      <div class="term" role="img" aria-label="A terminal tab connected over SSH">
+        <div class="tabs"><span class="on">web-01</span><span>db-01</span><span>router</span></div>
+<pre><span class="p">deploy@web-01</span>:~$ systemctl is-active nginx
+active
+<span class="p">deploy@web-01</span>:~$ df -h /srv
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        98G   41G   53G  44% /srv
+<span class="p">deploy@web-01</span>:~$ <span class="c">▍</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap split">
+      <div>
+        <p class="kicker">Everywhere</p>
+        <h2>Native on the desktop, at home on a phone.</h2>
+        <p class="sub" style="margin-bottom:0">Built in Go with <a href="https://github.com/xmhrnx/giode">Giode</a>: GPU-rendered, no webview.
+          Start at login straight into the tray, keep running there when the window closes on Windows and macOS,
+          and switch pages with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>1</kbd>–<kbd>8</kbd>. The layout adapts down to phone
+          width, where the server list becomes a drawer.</p>
+      </div>
+      <div class="rack" style="grid-template-columns:1fr">
+        <div class="unit"><h3>Dark and light</h3><p>Or follow the system. Pick the background tone (emerald, graphite, midnight, plum, black) and the accent color in Settings.</p></div>
+        <div class="unit"><h3>Your data, your folder</h3><p>The workspace lives in the platform's configuration folder; set <code>SERVERUS_DATA_DIR</code> for a portable install.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" class="download">
+    <div class="wrap">
+      <p class="kicker">Download</p>
+      <h2>Get Serverus.</h2>
+      <p class="sub">Every release is built by GitHub Actions and attached to the release page.</p>
+      <div class="os">
+        <a href="https://github.com/xmhrnx/serverus/releases/latest"><b>Windows</b><small>installer · MSIX</small></a>
+        <a href="https://github.com/xmhrnx/serverus/releases/latest"><b>macOS</b><small>DMG</small></a>
+        <a href="https://github.com/xmhrnx/serverus/releases/latest"><b>Linux</b><small>.deb · .rpm</small></a>
+        <a href="https://github.com/xmhrnx/serverus/releases/latest"><b>Android</b><small>APK</small></a>
+      </div>
+      <a class="btn primary" href="https://github.com/xmhrnx/serverus/releases/latest">All files of the latest release</a>
+      <div class="build">
+        <p class="kicker" style="margin-top:28px">Or build it yourself</p>
+        <p style="color:var(--secondary);margin:0">With Go 1.26+ and the Giode CLI (on Linux, Gio's development packages too; <code>giode doctor</code> lists them):</p>
+<pre>git clone https://github.com/xmhrnx/serverus
+cd serverus
+go install github.com/xmhrnx/giode-cli/cmd/giode@latest
+giode run</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="" width="24" height="24" style="width:24px;height:24px">Serverus</a>
+    <span>Released under the <a href="https://github.com/xmhrnx/serverus/blob/main/LICENSE">Apache License 2.0</a>.</span>
+    <div class="links">
+      <a href="https://github.com/xmhrnx/serverus">Source</a>
+      <a href="https://github.com/xmhrnx/serverus/releases">Releases</a>
+      <a href="https://github.com/xmhrnx/serverus/issues">Issues</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
