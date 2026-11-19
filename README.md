@@ -188,8 +188,9 @@ under `transport/` and a case in `connector`.
 
 ## Icon
 
-`scripts/make_icon.py` (Pillow) draws `assets/icon.png` and Android's adaptive icon
-layers, `assets/android-foreground.png` and `assets/android-background.png`.
+`scripts/make_icon.py` (Pillow) draws `assets/icon.png`, Android's adaptive icon
+layers, `assets/android-foreground.png`, `assets/android-background.png` and
+`assets/android-monochrome.png` (themed icons), and the tray icons.
 
 ## Licenses
 

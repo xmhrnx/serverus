@@ -7,6 +7,7 @@ id = "com.xmhrnx.serverus"            # reverse-DNS, unique to your app; stores 
 version = "0.1.0"
 build = 1                    # raise for every store upload (giode bump)
 icon = "assets/icon.png"
+splash_color = "#08110d"     # the dark emerald background the app opens in, instead of a white flash
 package = "."
 platforms = ["windows", "macos", "linux", "android"]   # what giode build builds with no target named
 publisher = "xmhrnx"
@@ -19,6 +20,7 @@ min_sdk = 21
 # launcher shows white where app.icon's rounded corners are transparent.
 icon_foreground = "assets/android-foreground.png"
 icon_background = "assets/android-background.png"
+icon_monochrome = "assets/android-monochrome.png"   # themed icons (Android 13+)
 permissions = ["network"]
 # keep_alive = true          # lets App.KeepAlive keep work running in the background
 # keystore = "release.keystore"   # created by giode keystore; signs giode build -release
@@ -52,7 +54,7 @@ startup_task = true
 
 [linux]
 categories = ["Network", "System", "Utility"]     # freedesktop menu categories
-# license = "MIT"            # SPDX, for .deb, .rpm and AppStream
+license = "Apache-2.0"       # SPDX, for .deb, .rpm and AppStream
 
 [ci]
 trigger = "release"   # build when a GitHub release is published

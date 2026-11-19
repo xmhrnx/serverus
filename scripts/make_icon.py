@@ -2,13 +2,16 @@
 """Draws the app icon: a server chassis with three rack units as a face,
 framed by long, straight, black curtain hair parted in the middle.
 
-It writes five files:
+It writes six files:
   assets/icon.png                the icon on its rounded green tile
   assets/android-background.png  Android's adaptive icon background layer
   assets/android-foreground.png  Android's adaptive icon foreground layer: the
                                  character alone, inside the 66dp safe zone of
                                  the 108dp canvas, so launchers can mask the
                                  icon to any shape without edges showing
+  assets/android-monochrome.png  Android 13's themed icon layer: the
+                                 foreground as a silhouette with the rack
+                                 units cut out, which the launcher tints
   assets/tray.png                the system tray icon, 64 px
   assets/tray-template.png       the macOS menu bar icon: a black silhouette
                                  with the rack units cut out, which macOS
@@ -197,6 +200,25 @@ offset = int(W * (1 - scale) / 2)
 foreground.alpha_composite(small, (offset, offset - int(W * 0.01)))
 foreground.resize((S, S), Image.LANCZOS).save("assets/android-foreground.png")
 
+
+def silhouette(src, min_alpha=0):
+    """Keeps the shape of src: dark hair and chassis become black, the
+    light rack units become holes. Pixels below min_alpha (soft drop
+    shadows) are dropped and the rest rescaled, for a crisp edge."""
+    out = Image.new("RGBA", src.size, (0, 0, 0, 0))
+    s, o = src.load(), out.load()
+    for y in range(src.size[1]):
+        for x in range(src.size[0]):
+            r, g, b, a = s[x, y]
+            if a > min_alpha and (r * 299 + g * 587 + b * 114) // 1000 < 110:
+                o[x, y] = (0, 0, 0, (a - min_alpha) * 255 // (255 - min_alpha))
+    return out
+
+
+# Themed icons use only the monochrome layer's alpha, on the same 108dp
+# canvas as the foreground, without the drop shadows.
+silhouette(foreground.resize((S, S), Image.LANCZOS), min_alpha=160).save("assets/android-monochrome.png")
+
 # Tray icons: the character alone, cropped to its bounds.
 box = character.getbbox()
 side = max(box[2] - box[0], box[3] - box[1])
@@ -204,14 +226,5 @@ cx, cy = (box[0] + box[2]) // 2, (box[1] + box[3]) // 2
 crop = character.crop((cx - side // 2, cy - side // 2, cx + side // 2, cy + side // 2))
 crop.resize((64, 64), Image.LANCZOS).save("assets/tray.png")
 
-# The template keeps the shape: dark hair and chassis become black, the
-# light rack units become holes.
-template = Image.new("RGBA", crop.size, (0, 0, 0, 0))
-src = crop.load()
-dst = template.load()
-for y in range(crop.size[1]):
-    for x in range(crop.size[0]):
-        r, g, b, a = src[x, y]
-        if a and (r * 299 + g * 587 + b * 114) // 1000 < 110:
-            dst[x, y] = (0, 0, 0, a)
-template.resize((64, 64), Image.LANCZOS).save("assets/tray-template.png")
+# The menu bar template is the same silhouette.
+silhouette(crop).resize((64, 64), Image.LANCZOS).save("assets/tray-template.png")
