@@ -136,9 +136,9 @@ Publishing a GitHub release builds every platform and attaches the packages to i
 example `1.0.0.1`: the first three parts are the version shown everywhere, the fourth is
 Android's versionCode, which must be at least 1 and grow with every Play upload. The
 workflow is written by `giode ci` from `[ci]` in `giode.toml`; change it there and run
-`giode ci -f`. Signing uses these repository secrets when present: `ANDROID_KEYSTORE_BASE64` and
-`GIODE_KEYSTORE_PASS`, `WINDOWS_CERT_BASE64` and `GIODE_WINDOWS_CERT_PASS`,
-`MACOS_CERT_BASE64`, `MACOS_CERT_PASS` and `GIODE_NOTARY_PASS`.
+`giode ci -f`. Store packages (Microsoft Store MSIX, Mac App Store `.pkg`, Google Play
+`.aab`), the signing secrets and the store listings are described in
+[RELEASING.md](RELEASING.md).
 
 Data lives in the platform's configuration folder (`~/.config/Serverus`,
 `%AppData%\Serverus`, `~/Library/Application Support/Serverus`); set `SERVERUS_DATA_DIR` to
