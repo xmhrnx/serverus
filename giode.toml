@@ -17,6 +17,10 @@ website = "https://xmhrnx.github.io/serverus/"
 [android]
 min_sdk = 21
 target_sdk = 36               # Google Play requires Android 16 (API 36) for new apps and updates since 31 Aug 2026
+# Gio handles the back gesture in onBackPressed(), which Android 16 stops
+# calling for apps targeting API 36 (predictive back): opt out so back
+# still goes back a screen instead of closing the app.
+application_attributes = { enableOnBackInvokedCallback = "false" }
 # Adaptive icon layers, drawn by scripts/make_icon.py. Without them the
 # launcher shows white where app.icon's rounded corners are transparent.
 icon_foreground = "assets/android-foreground.png"
